@@ -187,11 +187,6 @@ export function BusinessProfileCard({
           {mutation.isPending ? "نقرأ موقعك…" : has ? "أعد التحليل" : "افهم نشاطي"}
         </Button>
       </form>
-      {mutation.isPending ? (
-        <p className="mt-2 text-xs text-muted-foreground">
-          جارٍ تحليل الموقع والتحقق من صفحات المنافسين؛ قد يستغرق بضع دقائق.
-        </p>
-      ) : null}
       {mutation.error ? (
         <p className="mt-3 rounded-2xl bg-coral/12 px-4 py-3 text-sm font-semibold text-coral">
           {mutation.error instanceof Error ? mutation.error.message : "تعذّر تحليل الموقع"}
@@ -224,7 +219,7 @@ export function BusinessProfileCard({
             {p.competitorEvidence?.length ? <ul className="mt-3 divide-y divide-border">{p.competitorEvidence.map((c) => <li key={c.domain} className="py-3 text-sm leading-7">
               <a href={c.url} target="_blank" rel="noopener noreferrer" className="break-all font-bold text-primary underline" dir="ltr">{c.domain}</a>
               <p>{c.reason}</p><blockquote className="mt-1 border-s-2 border-border ps-3 text-muted-foreground">«{c.quote}»</blockquote>
-            </li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">لم تتوفر أدلة كافية لتأكيد المنافسين في هذا الفحص.</p>}
+            </li>)}</ul> : <Button type="button" variant="outline" className="mt-3" disabled={mutation.isPending} onClick={() => mutation.mutate(url.trim())}><RefreshCw className={cn("size-4", mutation.isPending && "animate-spin")} />{mutation.isPending ? "جارٍ البحث…" : "بحث جديد عن المنافسين"}</Button>}
           </div>
           {p.pagesRead?.length ? <details className="border-t border-border pt-3"><summary className="cursor-pointer text-sm font-bold">الصفحات المقروءة ({p.pagesRead.length})</summary><ul className="mt-2 space-y-2">{p.pagesRead.map((page) => <li key={page}><a href={page} target="_blank" rel="noopener noreferrer" dir="ltr" className="block break-all text-xs text-primary underline">{page}</a></li>)}</ul></details> : null}
           {p.gaps?.length ? <div className="border-t border-border pt-3"><h3 className="text-sm font-bold">ما يحتاج تأكيدك</h3><ul className="mt-2 list-inside list-disc space-y-1 text-sm text-muted-foreground">{p.gaps.map((gap) => <li key={gap}>{gap}</li>)}</ul></div> : null}
