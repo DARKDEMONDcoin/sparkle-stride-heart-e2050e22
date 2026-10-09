@@ -35,7 +35,7 @@ export type BusinessProfile = {
   /** اقتراحات أول مهمة لكل موظف — مبنية على ما فُهم من الموقع. */
   firstTasks: { employeeId: string; title: string; prompt: string }[];
   /** التكاملات الأعلى قيمة لهذا النشاط تحديداً (بترتيب). */
-  recommendedIntegrations: { provider: string; why: string; evidence?: string; score?: number }[];
+  recommendedIntegrations: { provider: string; why: string; evidence?: string | undefined; score?: number | undefined }[];
   pagesRead: string[];
   confidence: "high" | "medium" | "low";
 };

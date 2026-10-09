@@ -44,7 +44,7 @@
 - AccountMenu owns UI; AppShell owns auth/data. Account entry points only; uniform stays in settings to avoid duplicates.
 - Settings links/history use router search.
 - Employee IDs are permanent (DB/URLs).
-- Brand references: bounded PDF/Office extraction, owner auth, private originals; why: protect source documents.
-- Brand links reuse onboarding safe reader; why: avoid bot-block divergence.
+- Brand references stay bounded/private and sanitized; why: protect sources.
+- Brand extraction uses safe reader + schemas; profiles require review, competitors inspected quotes. Why: prevent fabricated facts.
 - Gateway key via `ai-key-health.server.ts`; rejected keys fall back to Gemini. Why: Vercel may hold a stale key.
 - Webhook/login/OAuth origins default to `SITE_ORIGIN`; Vercel maxDuration set in vite.config. Why: old hosts are dead.
