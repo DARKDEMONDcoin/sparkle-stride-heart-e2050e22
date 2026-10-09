@@ -7,6 +7,7 @@
  * ويتوقف عند طلب موافقة المالك.
  */
 import { getSecrets } from "./secrets.server";
+import { createBrowserSession } from "./browser-session.server";
 
 const BB = "https://api.browserbase.com/v1";
 
@@ -99,16 +100,12 @@ export async function browsePage(url: string, opts: { screenshot?: boolean; html
   const projectId = s?.BROWSERBASE_PROJECT_ID;
   if (!apiKey || !projectId) return fail(url, "المتصفح السحابي غير مفعّل بعد على المنصة.");
 
-  const created = await fetch(`${BB}/sessions`, {
-    method: "POST",
-    headers: { "X-BB-API-Key": apiKey, "Content-Type": "application/json" },
-    body: JSON.stringify({ projectId, timeout: 120 }),
-  });
-  if (!created.ok) {
-    console.warn("[browser] session create failed", created.status);
-    return fail(url, created.status === 429 ? "المتصفح السحابي مشغول الآن — أعد المحاولة بعد دقيقة." : "تعذّر تشغيل المتصفح السحابي الآن.");
+  let session: { id: string; connectUrl: string };
+  try {
+    session = await createBrowserSession(apiKey, { projectId, timeout: 120 });
+  } catch (error) {
+    return fail(url, error instanceof Error ? error.message : "تعذر تشغيل المتصفح السحابي.");
   }
-  const session = (await created.json()) as { id: string; connectUrl: string };
   let cdp: Cdp | null = null;
   try {
     cdp = await connectCdp(session.connectUrl);
@@ -137,7 +134,14 @@ export async function browsePage(url: string, opts: { screenshot?: boolean; html
     }
     const text = (parsed.x ?? "").replace(/\n{3,}/g, "\n\n").trim();
     if (text.length < 50) return fail(url, "الصفحة فُتحت لكنها بلا محتوى مقروء (قد تكون محمية أو تتطلب تسجيل دخول).");
-    return { url: parsed.u ?? url, title: parsed.t || url, text: text.slice(0, 20_000), screenshotUrl };
+    let html: string | undefined;
+    if (opts.html) {
+      const document = await cdp.send("Runtime.evaluate", {
+        expression: "document.documentElement.outerHTML.slice(0,1500000)", returnByValue: true,
+      }, sessionId);
+      if (typeof document?.result?.value === "string") html = document.result.value;
+    }
+    return { url: parsed.u ?? url, title: parsed.t || url, text: text.slice(0, 20_000), screenshotUrl, ...(html ? { html } : {}) };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.warn("[browser] failed:", msg);
@@ -181,13 +185,7 @@ export async function fillForm(url: string, fields: string, opts: { submit: bool
     .filter((p) => p.length >= 2 && p[0]!.trim())
     .map((p) => [p[0]!.trim(), p.slice(1).join(":").trim()] as [string, string]);
 
-  const created = await fetch(`${BB}/sessions`, {
-    method: "POST",
-    headers: { "X-BB-API-Key": apiKey, "Content-Type": "application/json" },
-    body: JSON.stringify({ projectId, timeout: 180 }),
-  });
-  if (!created.ok) throw new Error("تعذّر فتح المتصفح السحابي الآن.");
-  const session = (await created.json()) as { id: string; connectUrl: string };
+  const session = await createBrowserSession(apiKey, { projectId, timeout: 180 });
   let cdp: Cdp | null = null;
   const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
   try {

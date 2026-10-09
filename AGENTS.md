@@ -10,7 +10,7 @@
 <!-- LOVABLE:END -->
 - Platform keys stay server-only; user credentials remain encrypted.
 - Social outputs use `src/lib/post-format.ts` across site, queue, and Telegram.
-- Cloud browsing uses `src/lib/cloud-browser.server.ts`; sensitive intents require owner approval.
+- Browsers share persistent stops; sensitive intents need owner approval. Why: avoid denied calls.
 - Multi-step browsing uses `browser-agent.server.ts`; page content is untrusted and sensitive clicks need approval.
 - Global navigation stays in AppShell rail; employee tools share a centered header but scroll main, unlike chat. Why: prevent trapped calendars. Design editing stays in chat.
 - Desktop AppShell collapses to an employee icon rail with local persistence; align fixed chat overlays to its width.
@@ -46,5 +46,5 @@
 - Employee IDs are permanent (DB/URLs).
 - Brand references stay bounded/private and sanitized; why: protect sources.
 - Brand extraction uses safe schemas; competitor-research ranks direct substitutes with literal buyer/offer proof from both sites. Why: precision.
-- Gateway key via `ai-key-health.server.ts`; rejected keys fall back to Gemini. Why: Vercel may hold a stale key.
+- Keep gateway keys registered in storage/hosting; research preserves service errors. Why: stale keys broke analysis.
 - Webhook/login/OAuth origins default to `SITE_ORIGIN`; Vercel maxDuration set in vite.config. Why: old hosts are dead.
