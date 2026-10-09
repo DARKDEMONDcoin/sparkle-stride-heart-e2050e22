@@ -57,10 +57,10 @@ function timeAgo(iso: string) {
   return `قبل ${Math.round(hrs / 24)} يوم`;
 }
 
-type SavedWelcome = { purpose?: string; industry?: string; plan?: WelcomeDraftData["plan"] };
+type SavedWelcome = { purpose?: string | undefined; industry?: string | undefined; plan?: WelcomeDraftData["plan"] | undefined };
 
 /** خطة البداية المحفوظة من /welcome: نفس المهام الثلاث، تفتح محادثة الموظف بالنص جاهزاً دون إرسال. */
-function StarterPlan({ industry, actions }: { industry?: string; actions: StarterAction[] }) {
+function StarterPlan({ industry, actions }: { industry?: string | undefined; actions: StarterAction[] }) {
   const items = actions
     .map((a) => ({ ...a, id: employeeIdFromName(a.employee) }))
     .filter((a): a is StarterAction & { id: string } => Boolean(a.id))
