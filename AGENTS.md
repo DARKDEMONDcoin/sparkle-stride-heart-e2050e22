@@ -38,12 +38,12 @@
 - Team spaces share employee chats: stream route verifies membership, runs turn via admin client; messages store sender. Why: shared human+AI threads.
 - Invitees accept/decline in the AppShell NotificationBell (`invite-inbox.functions.ts`); inviters get a `user_notifications` row. Why: no reliance on copied links.
 - Project spaces get a team block (members + sender) in employee turns; stream passes verified client+sender. Why: chats address the team.
-- Referral earnings require verified payments and refund maturity; users cannot write them.
-- Feedback/support are private (RLS).
+- Referrals: scoped Ziad styling; preserve codes, verified payments and refund maturity; no user-written earnings.
+- Feedback/support: private RLS.
 - Chat media uses `ChatAttachments` with bounded sizing, fullscreen viewing and avatar-side assistant alignment. Why: preserve sender attribution.
-- AccountMenu owns UI; AppShell owns auth/data. Account entry points only; uniform stays in settings to avoid duplicates.
-- Settings links/history use router search.
-- Employee IDs are permanent (DB/URLs).
+- AccountMenu owns UI; AppShell owns auth/data. Account entry points only; uniform stays in settings.
+- Settings use router search.
+- Employee IDs: permanent (DB/URLs).
 - Brand references stay bounded/private and sanitized; why: protect sources.
 - Brand extraction uses safe schemas; competitor-research ranks direct substitutes with literal buyer/offer proof from both sites. Why: precision.
 - Keep gateway keys registered in storage/hosting; research preserves service errors. Why: stale keys broke analysis.
