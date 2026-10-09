@@ -373,7 +373,7 @@ export const useCases: UseCase[] = [
     outcomes: [
       { k: "محتوى قيمة أسبوعياً", v: "٥+" },
       { k: "رد على المهتم", v: "فوري" },
-      { k: "متابعة المترددين", v: "تلقائية" },
+      { k: "متابعة المترددين", v: "بعد موافقتك" },
     ],
     apps: ["instagram", "youtube", "linkedin", "gmail", "mailchimp", "notion", "analytics"],
     crew: ["nour", "sam", "eva", "dana", "adam"],
@@ -433,7 +433,7 @@ export const useCases: UseCase[] = [
     outcomes: [
       { k: "منشورات مهنية شهرياً", v: "١٢+" },
       { k: "زمن عرض السعر", v: "< ساعة" },
-      { k: "متابعة العروض", v: "تلقائية" },
+      { k: "متابعة العروض", v: "بعد موافقتك" },
     ],
     apps: ["linkedin", "x", "gmail", "calendar", "notion", "search-console", "analytics"],
     crew: ["sonny", "nour", "sam", "eva", "adam"],

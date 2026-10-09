@@ -123,7 +123,7 @@ const SIDE_GUIDE: Record<"sonny" | "dana" | "nour", { lead: string; steps: [type
     steps: [
       [Lightbulb, "فكرة → أكتبها وأصمّم صورتها على هوية علامتك.", "text-amber"],
       [Check, "جاهز → تراجعه وتعتمده، فيُنشر في موعده تلقائياً.", "text-sky"],
-      [TrendingUp, "أتعلّم من أداء منشوراتك وأعدّل الخطة تلقائياً.", "text-jade"],
+      [TrendingUp, "أتعلّم من أداء منشوراتك وأقترح تعديلات على الخطة لتعتمدها.", "text-jade"],
     ],
   },
   dana: {
