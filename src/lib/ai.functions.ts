@@ -606,6 +606,7 @@ export async function runEmployeeTurn(
     // الوضع يُحسم من الخطة الفعلية: لا مراحل ولا لوحة عمل لدردشة أو سؤال لا يحتاج تنفيذاً.
     const quickTurn = intent !== "work" && !wantsResearch.wanted && !turnPlan.useTools && !wantsWeb && !routed;
     emit({ type: "mode", mode: quickTurn ? "quick" : "work" });
+    console.log("[turn-mode]", JSON.stringify({ quickTurn, intent, r: wantsResearch.wanted, tools: turnPlan.useTools, wantsWeb, routed: !!routed }));
     if (wantsResearch.wanted) emit({ type: "step", label: `أبحث في مصادر حقيقية عن «${wantsResearch.topic || turnTopic}»` });
     // بحث بمتصفح حقيقي مرئي للمستخدم لحظة بلحظة عند طلب بحث صريح.
     // متابعة قصيرة («ابدأ»، «يلا»، «ما تبحث») تكمل طلب البحث السابق بدل إهماله.
