@@ -1,3 +1,4 @@
+import { redirect } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ListenButton } from "@/components/app/ListenButton";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
@@ -244,6 +245,10 @@ export const Route = createFileRoute("/app/chat/$id")({
   validateSearch: (s: Record<string, unknown>): { prompt?: string } =>
     typeof s["prompt"] === "string" && s["prompt"] ? { prompt: s["prompt"].slice(0, 4000) } : {},
   pendingMs: 60_000,
+  beforeLoad: ({ params, search }) => {
+    // Friendly alias: /app/chat/siraj → permanent id sonny.
+    if (params.id === "siraj") throw redirect({ to: "/app/chat/$id", params: { id: "sonny" }, search, replace: true });
+  },
   loader: ({ params }) => {
     const member = getMember(params.id);
     if (!member) throw notFound();

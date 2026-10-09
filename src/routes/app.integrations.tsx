@@ -373,82 +373,46 @@ function IntegrationsPage() {
           <BrandLoader size="sm" />
         </div>
       ) : (
-        <div className="space-y-6">
-          {team.map((m) => {
-            const owned = unique
-              .filter((i) => i.employee_id === m.id)
-              .filter((i) => !query.trim() || appLabel(i.provider).includes(query.trim()));
-            if (!owned.length) return null;
-            return (
-              <section key={m.id} className="rounded-3xl border border-border bg-card p-5 sm:p-6">
-                <div className="flex items-center gap-3">
-                  <span
-                    className="grid size-11 shrink-0 overflow-hidden rounded-2xl ring-2"
-                    style={
-                      {
-                        background: m.tintSoft,
-                        "--tw-ring-color": m.tintSoft,
-                      } as React.CSSProperties
-                    }
+        <section className="rounded-3xl border border-border bg-card p-5 sm:p-6">
+          <p className="text-sm leading-relaxed text-ink-soft">
+            ننصح بالبدء بربط <b>إنستجرام أو فيسبوك</b> ليجهز سِراج منشوراتك، ثم <b>Google Search Console</b> لنور. لا يُنشر أو يُرسل شيء دون موافقتك.
+          </p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {unique
+              .filter((i) => !query.trim() || appLabel(i.provider).includes(query.trim()))
+              .map((i) => {
+                const rows = (integrations ?? []).filter((x) => x.provider === i.provider);
+                const status = rows.some((x) => x.status === "connected") ? "connected" : rows.some((x) => x.status === "error") ? "error" : i.status;
+                const account = rows.find((x) => x.status === "connected")?.account;
+                const users = team.filter((m) => rows.some((x) => x.employee_id === m.id));
+                return (
+                  <button
+                    key={i.provider}
+                    type="button"
+                    onClick={() => setDetail(i.provider)}
+                    className="flex items-center gap-3 rounded-2xl border border-border/70 p-4 text-right transition-colors hover:border-foreground/30 hover:bg-secondary/40"
                   >
-                    <Portrait memberId={m.id} name={m.name} className="size-full" />
-                  </span>
-                  <div className="min-w-0">
-                    <h2 className="font-display font-black">{m.name}</h2>
-                    <p className="truncate text-sm text-muted-foreground">{m.role}</p>
-                  </div>
-                  <span className="ms-auto shrink-0 text-xs font-bold text-muted-foreground">
-                    {owned.filter((i) => i.status === "connected").length}/{owned.length}
-                  </span>
-                </div>
-
-                <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {owned.map((i) => (
-                    <button
-                      key={i.id}
-                      type="button"
-                      onClick={() => setDetail(i.provider)}
-                      className="flex items-center gap-3 rounded-2xl border border-border/70 p-4 text-right transition-colors hover:border-foreground/30 hover:bg-secondary/40"
-                    >
-                      <AppIcon name={i.provider} className="size-6 shrink-0" />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-bold">
-                          {appLabel(i.provider)}
-                        </span>
-                        <span
-                          className={cn(
-                            "block truncate text-xs",
-                            i.status === "connected"
-                              ? "text-jade-deep"
-                              : i.status === "error"
-                                ? "text-coral"
-                                : "text-muted-foreground",
-                          )}
-                        >
-                          {i.status === "connected"
-                            ? (i.account ?? integrationStatusLabel.connected)
-                            : i.status === "error"
-                              ? "يحتاج إعادة ربط"
-                              : "غير مربوط"}
-                        </span>
+                    <AppIcon name={i.provider} className="size-6 shrink-0" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-bold">{appLabel(i.provider)}</span>
+                      <span className={cn("block truncate text-xs", status === "connected" ? "text-jade-deep" : status === "error" ? "text-coral" : "text-muted-foreground")}>
+                        {status === "connected" ? (account ?? integrationStatusLabel.connected) : status === "error" ? "يحتاج إعادة ربط" : "غير مربوط"}
                       </span>
-                      <span
-                        className={cn(
-                          "size-2 shrink-0 rounded-full",
-                          i.status === "connected"
-                            ? "bg-jade-deep"
-                            : i.status === "error"
-                              ? "bg-coral"
-                              : "bg-border",
-                        )}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
-        </div>
+                      <span className="mt-1.5 flex items-center gap-1" aria-label={`يستخدمه: ${users.map((m) => m.name).join("، ")}`}>
+                        {users.map((m) => (
+                          <span key={m.id} title={m.name} className="block size-5 overflow-hidden rounded-full ring-1 ring-border">
+                            <Portrait memberId={m.id} name={m.name} className="size-full" />
+                          </span>
+                        ))}
+                        <span className="ms-1 truncate text-[0.68rem] text-muted-foreground">{users.map((m) => m.name).join("، ")}</span>
+                      </span>
+                    </span>
+                    <span className={cn("size-2 shrink-0 rounded-full", status === "connected" ? "bg-jade-deep" : status === "error" ? "bg-coral" : "bg-border")} />
+                  </button>
+                );
+              })}
+          </div>
+        </section>
       )}
 
       {detailRow ? (
