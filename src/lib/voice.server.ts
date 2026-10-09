@@ -13,6 +13,21 @@ export function speakableText(text: string): string {
     .slice(0, 3500);
 }
 
+/** صوت خاص بكل موظف: الإناث بأصوات نسائية والذكور بأصوات رجالية، كلٌّ حسب شخصيته. */
+type VoiceProfile = { openai: string; gemini: string; style: string };
+export const EMPLOYEE_VOICES: Record<string, VoiceProfile> = {
+  sonny: { openai: "ash", gemini: "Puck", style: "رجل شاب حيوي ومتحمس، نبرة مبدع سوشيال ميديا واثق وودود" },
+  sam: { openai: "onyx", gemini: "Algieba", style: "رجل واثق ومقنع، نبرة مندوب مبيعات محترف دافئ" },
+  adam: { openai: "echo", gemini: "Charon", style: "رجل هادئ ورزين، نبرة محلل بيانات دقيق وواضح" },
+  eva: { openai: "shimmer", gemini: "Kore", style: "امرأة هادئة ومنظمة، نبرة مساعدة تنفيذية راقية ومطمئنة" },
+  nour: { openai: "nova", gemini: "Leda", style: "امرأة شابة مشرقة، نبرة كاتبة محتوى دافئة وسلسة" },
+  dana: { openai: "coral", gemini: "Aoede", style: "امرأة مبدعة ومرحة، نبرة مصممة فنانة خفيفة وملهمة" },
+};
+const DEFAULT_VOICE: VoiceProfile = { openai: "alloy", gemini: "Kore", style: "نبرة دافئة وواضحة" };
+export function voiceFor(employeeId?: string): VoiceProfile {
+  return (employeeId && EMPLOYEE_VOICES[employeeId]) || DEFAULT_VOICE;
+}
+
 export type Speech = { bytes: ArrayBuffer; mime: string };
 
 /** يغلّف PCM خام (16-bit mono) في ملف WAV يشغّله أي متصفح. */
@@ -37,7 +52,7 @@ export function pcmToWav(pcm: Uint8Array, sampleRate = 24_000): ArrayBuffer {
   return out;
 }
 
-async function viaGemini(input: string): Promise<Speech | null> {
+async function viaGemini(input: string, v: VoiceProfile): Promise<Speech | null> {
   const key = await geminiKey();
   if (!key) return null;
   const res = await fetch(
@@ -46,10 +61,10 @@ async function viaGemini(input: string): Promise<Speech | null> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: `اقرأ بالعربية بنبرة دافئة وواضحة وسرعة طبيعية:\n${input}` }] }],
+        contents: [{ parts: [{ text: `اقرأ بالعربية بصوت ${v.style}، بإيقاع طبيعي كأنك تتكلم لا تقرأ:\n${input}` }] }],
         generationConfig: {
           responseModalities: ["AUDIO"],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } },
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: v.gemini } } },
         },
       }),
       signal: AbortSignal.timeout(60_000),
@@ -74,8 +89,9 @@ async function viaGemini(input: string): Promise<Speech | null> {
   return { bytes: pcmToWav(pcm, rate), mime: "audio/wav" };
 }
 
-export async function synthesizeSpeech(text: string): Promise<Speech> {
+export async function synthesizeSpeech(text: string, employeeId?: string): Promise<Speech> {
   const input = speakableText(text);
+  const v = voiceFor(employeeId);
   if (!input) throw new Error("لا يوجد نص قابل للقراءة.");
   const key = await usableLovableKey();
   if (key) {
@@ -84,10 +100,10 @@ export async function synthesizeSpeech(text: string): Promise<Speech> {
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "openai/gpt-4o-mini-tts",
-        voice: "alloy",
+        voice: v.openai,
         input,
         response_format: "mp3",
-        instructions: "تحدّث بالعربية بنبرة دافئة وواضحة وسرعة طبيعية.",
+        instructions: `تحدّث بالعربية بصوت ${v.style}، بإيقاع طبيعي كأنك تتكلم لا تقرأ.`,
       }),
     }).catch(() => null);
     if (res?.ok) return { bytes: await res.arrayBuffer(), mime: "audio/mpeg" };
@@ -96,7 +112,7 @@ export async function synthesizeSpeech(text: string): Promise<Speech> {
       console.error(`[voice] tts failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
     }
   }
-  const fallback = await viaGemini(input);
+  const fallback = await viaGemini(input, v);
   if (fallback) return fallback;
   throw new Error(key ? "تعذّر تحويل الرد إلى صوت." : "خدمة الصوت غير مهيّأة.");
 }
