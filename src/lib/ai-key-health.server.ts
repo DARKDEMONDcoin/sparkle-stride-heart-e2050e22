@@ -2,33 +2,46 @@
  * حالة مفتاح بوابة Lovable AI على الاستضافة الحالية.
  *
  * على Vercel (أو أي استضافة خارجية) قد يكون LOVABLE_API_KEY نسخة قديمة غير مسجّلة،
- * فترفضه البوابة بـ 401/403. أول رفض يوقف استخدامه مؤقتاً على هذه النسخة من الخادم،
- * فتذهب كل الخدمات مباشرة إلى Gemini بدل أن تجرّب مفتاحاً مرفوضاً في كل طلب.
+ * فترفضه البوابة بـ 401/403. الرفض يوقف استخدام *هذه القيمة بالذات* مؤقتاً،
+ * فإذا حُدِّث المفتاح (في app_secrets أو بيئة التشغيل) يُستخدم الجديد فوراً بلا انتظار.
  */
 
 const DEAD_MS = 15 * 60_000;
+let deadKey = "";
 let deadUntil = 0;
+let lastKey = "";
 
-export function lovableKeyAlive(): boolean {
-  return Date.now() >= deadUntil;
+/** هل المفتاح (أو آخر مفتاح مستخدم) غير موقوف؟ */
+export function lovableKeyAlive(key?: string): boolean {
+  if (Date.now() >= deadUntil) return true;
+  const k = key ?? lastKey;
+  return !!k && k !== deadKey;
 }
 
 /** يُنادى بعد أي رد غير ناجح من بوابة Lovable. */
 export function reportLovableStatus(status: number, where: string): void {
   if (status !== 401 && status !== 403 && status !== 402) return;
-  if (lovableKeyAlive()) {
+  if (lastKey !== deadKey || Date.now() >= deadUntil) {
     console.error(
-      `[ai] Lovable AI gateway rejected the key (${status}) in ${where}; using Gemini for the next 15 minutes.`,
+      `[ai] Lovable AI gateway rejected the key (${status}) in ${where}; using Gemini until the key changes (max 15 minutes).`,
     );
   }
+  deadKey = lastKey;
   deadUntil = Date.now() + DEAD_MS;
+}
+
+/** يسجّل المفتاح المستخدم فعلياً ليُنسب إليه أي رفض لاحق. */
+export function noteLovableKey(key: string): string {
+  if (key) lastKey = key;
+  return key;
 }
 
 /** مفتاح البوابة إن كان صالحاً على هذه النسخة، وإلا نص فارغ. */
 export async function usableLovableKey(): Promise<string> {
-  if (!lovableKeyAlive()) return "";
   const { getSecret } = await import("./secrets.server");
-  return getSecret("LOVABLE_API_KEY");
+  const key = await getSecret("LOVABLE_API_KEY");
+  if (!key || !lovableKeyAlive(key)) return "";
+  return noteLovableKey(key);
 }
 
 /** مفتاح Gemini المباشر (يعمل على أي استضافة). */

@@ -20,8 +20,9 @@ const GEMINI = "https://generativelanguage.googleapis.com/v1beta/openai/embeddin
 async function routes(): Promise<{ url: string; key: string; model: string }[]> {
   const s = await getSecrets(["LOVABLE_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY"] as const).catch(() => null);
   const gemini = s?.GEMINI_API_KEY || s?.GOOGLE_API_KEY || process.env["GEMINI_API_KEY"] || process.env["GOOGLE_API_KEY"];
-  const { lovableKeyAlive } = await import("./ai-key-health.server");
-  const lovable = lovableKeyAlive() ? s?.LOVABLE_API_KEY || process.env["LOVABLE_API_KEY"] : "";
+  const { lovableKeyAlive, noteLovableKey } = await import("./ai-key-health.server");
+  const raw = s?.LOVABLE_API_KEY || process.env["LOVABLE_API_KEY"] || "";
+  const lovable = raw && lovableKeyAlive(raw) ? noteLovableKey(raw) : "";
   const out: { url: string; key: string; model: string }[] = [];
   if (gemini) out.push({ url: GEMINI, key: gemini, model: "gemini-embedding-2" });
   if (lovable) out.push({ url: GATEWAY, key: lovable, model: MODEL });
