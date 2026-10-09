@@ -1,26 +1,25 @@
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { motion } from "motion/react";
-import { ArrowLeft, Check, CheckCircle2, Clock3, Coins, Copy, Crown, DollarSign, Gift, Link2, Loader2, MousePointerClick, Scale, Share2, Sparkles, TrendingUp, UserCheck, Users, WalletCards, Zap } from "lucide-react";
+import { ArrowLeft, BookOpen, Check, CheckCircle2, ChevronDown, Clock3, Copy, Crown, Download, HelpCircle, Link2, Loader2, MessageCircle, MousePointerClick, RotateCcw, Scale, Share2, TrendingUp, UserCheck, Users, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app/AppShell";
-import { LuxStage } from "@/components/app/LuxStage";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getReferralDashboard, requestReferralPayout } from "@/lib/referral.functions";
 import { SITE_ORIGIN } from "@/lib/site-origin";
+import logoUrl from "@/assets/ziad-logo.png";
+import "@/components/app/referral-club.css";
 
 export const Route = createFileRoute("/app/referral")({
   head: () => ({ meta: [
-    { title: "شارك واربح حتى ٥٠٪ | زياد" },
-    { name: "description", content: "لوحة إحالات زياد: شارك رابطك، تابع عملاءك وأرباحك، وارتقِ بعمولتك حتى ٥٠٪." },
-    { property: "og:title", content: "شارك واربح حتى ٥٠٪ | زياد" },
+    { title: "نادي شركاء زياد | عمولة حتى ٥٠٪" },
+    { name: "description", content: "نادي شركاء زياد: شارك رابطك، تابع إحالاتك وأرباحك المؤكدة، وارتقِ بعمولتك من ٢٠٪ إلى ٥٠٪." },
+    { property: "og:title", content: "نادي شركاء زياد | عمولة حتى ٥٠٪" },
     { property: "og:description", content: "تابع الإحالات والعمولات وطلبات السحب من مكان واحد." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
@@ -36,27 +35,47 @@ const levels = [
   { count: 25, rate: 50, name: "النخبة" },
 ] as const;
 
-const referralStatuses: Record<string, { label: string; className: string }> = {
-  signed_up: { label: "سجّل", className: "bg-secondary text-secondary-foreground" },
-  trial: { label: "يجرب الآن", className: "bg-gold-soft text-gold-deep" },
-  active: { label: "عميل نشط", className: "bg-jade/10 text-jade-deep" },
-  cancelled: { label: "غير نشط", className: "bg-muted text-muted-foreground" },
-  held: { label: "قيد المراجعة", className: "bg-coral/10 text-coral" },
+const referralStatuses: Record<string, { label: string; tone: string }> = {
+  signed_up: { label: "قيد الانتظار", tone: "rc-tone-gold" },
+  trial: { label: "يجرّب الآن", tone: "rc-tone-gold" },
+  active: { label: "مؤكدة", tone: "rc-tone-teal" },
+  cancelled: { label: "غير نشط", tone: "rc-tone-terra" },
+  held: { label: "قيد المراجعة", tone: "rc-tone-terra" },
 };
+
+const faqs = [
+  { q: "متى أستلم عمولتي؟", a: "تُحتسب العمولة بعد دفع العميل فعلياً، وتبقى معلّقة ٣٠ يوماً ثم تنتقل إلى رصيدك المتاح. يمكنك طلب السحب عند بلوغ ٥٠ دولاراً." },
+  { q: "ما حكم الاسترداد؟", a: "إذا استرد العميل مبلغه أو أُلغي الدفع خلال فترة المراجعة، تُعكس العمولة تلقائياً ويُحفظ السبب في السجل." },
+  { q: "كيف أتتبع إحالاتي؟", a: "كل زيارة لرابطك وكل حساب جديد يظهر هنا لحظياً، مع حالة كل إحالة دون أي بيانات شخصية عن العميل." },
+];
 
 function money(cents: number) {
   return new Intl.NumberFormat("ar", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(cents / 100);
 }
-
-function PartnerCard({ rate, level, code }: { rate: number; level: string; code: string }) {
-  return <motion.div initial={{ opacity: 0, rotateX: 18, y: 16 }} animate={{ opacity: 1, rotateX: 0, y: [0, -6, 0] }} transition={{ opacity: { duration: .6 }, rotateX: { duration: .8 }, y: { duration: 5, repeat: Infinity, ease: "easeInOut" } }} className="lux-card" style={{ perspective: 800 }} aria-label={`بطاقة شريك سهل، مستوى ${level}، عمولة ${rate}٪`}>
-    <div className="relative z-10 flex h-full flex-col justify-between">
-      <div className="flex items-start justify-between"><div><p className="text-[0.62rem] font-black tracking-widest text-gold">SAHL PARTNER</p><p className="mt-1 font-display text-sm font-black">نادي الشركاء</p></div><Crown className="size-6 text-gold" aria-hidden="true" /></div>
-      <div className="flex items-end justify-between gap-3"><div className="lux-chip" aria-hidden="true" /><div className="text-left"><strong className="lux-gold-text block font-display text-5xl font-black leading-none">{rate.toLocaleString("ar")}٪</strong><span className="text-[0.65rem] font-bold text-gold-soft/70">عمولتك الحالية</span></div></div>
-      <div className="flex items-end justify-between text-[0.68rem]"><div><p className="text-gold-soft/55">المستوى</p><p className="font-black">{level}</p></div><code dir="ltr" className="font-black tracking-[0.25em] text-gold">{code.toUpperCase()}</code></div>
-    </div>
-  </motion.div>;
+function dateAr(iso: string) {
+  return new Intl.DateTimeFormat("ar", { day: "numeric", month: "short", year: "numeric" }).format(new Date(iso));
 }
+
+/** عدّاد تصاعدي من الصفر عند التحميل وعند تحديث القيمة. */
+function CountUp({ value, format = (n: number) => Math.round(n).toLocaleString("ar"), duration = 1100 }: { value: number; format?: (n: number) => string; duration?: number }) {
+  const [display, setDisplay] = useState(0);
+  const from = useRef(0);
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) { setDisplay(value); from.current = value; return; }
+    const start = performance.now(); const a = from.current; let raf = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      setDisplay(a + (value - a) * (1 - Math.pow(1 - t, 3)));
+      if (t < 1) raf = requestAnimationFrame(tick); else from.current = value;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => { cancelAnimationFrame(raf); from.current = value; };
+  }, [value, duration]);
+  return <>{format(display)}</>;
+}
+
+function WhatsAppIcon() { return <MessageCircle className="size-5" />; }
+function XIcon() { return <svg viewBox="0 0 24 24" className="size-[1.1rem]" fill="currentColor" aria-hidden="true"><path d="M18.9 2H22l-6.8 7.8L23 22h-6.2l-4.8-6.3L6.4 22H3.3l7.3-8.3L1 2h6.3l4.4 5.8L18.9 2Zm-1.1 18h1.7L6.3 3.9H4.5L17.8 20Z" /></svg>; }
 
 function ReferralPage() {
   const load = useServerFn(getReferralDashboard);
@@ -69,10 +88,10 @@ function ReferralPage() {
   const dashboard = query.data;
   const referralUrl = dashboard ? `${SITE_ORIGIN}/r/${dashboard.code}` : "";
   const currentLevelIndex = dashboard ? levels.reduce((found, level, index) => dashboard.active >= level.count ? index : found, 0) : 0;
-  const currentLevel = levels[Math.max(0, currentLevelIndex)] ?? levels[0];
+  const currentLevel = levels[currentLevelIndex] ?? levels[0];
   const nextLevel = levels[currentLevelIndex + 1];
-  const progress = nextLevel ? ((dashboard?.active ?? 0) - currentLevel.count) / (nextLevel.count - currentLevel.count) * 100 : 100;
   const conversionRate = dashboard?.clicks ? Math.round((dashboard.signups / dashboard.clicks) * 100) : 0;
+  const shareText = "ترشيحي لك لتجربة زياد وفريقه الذكي. (رابط إحالة: قد أحصل على عمولة إذا اشتركت)";
   const withdrawal = useMutation({
     mutationFn: () => payout({ data: { method, destination } }),
     onSuccess: async () => {
@@ -83,86 +102,130 @@ function ReferralPage() {
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "تعذّر إرسال الطلب"),
   });
-  const stats = useMemo(() => dashboard ? [
-    { label: "زيارات الرابط", value: dashboard.clicks.toLocaleString("ar"), icon: MousePointerClick },
-    { label: "حسابات جديدة", value: dashboard.signups.toLocaleString("ar"), icon: Users },
-    { label: "عملاء نشطون", value: dashboard.active.toLocaleString("ar"), icon: UserCheck },
-    { label: "معدل التحويل", value: `${conversionRate.toLocaleString("ar")}٪`, icon: TrendingUp },
-  ] : [], [dashboard, conversionRate]);
 
   async function copyLink() {
     if (!referralUrl) return;
     await navigator.clipboard.writeText(referralUrl);
     toast.success("تم نسخ رابطك");
   }
-
   async function shareLink() {
     if (!referralUrl) return;
-    if (navigator.share) await navigator.share({ title: "جرّب زياد", text: "ترشيحي لك لتجربة زياد وفريقه الذكي. (رابط إحالة: قد أحصل على عمولة إذا اشتركت)", url: referralUrl });
+    if (navigator.share) await navigator.share({ title: "جرّب زياد", text: shareText, url: referralUrl }).catch(() => undefined);
     else await copyLink();
   }
 
-  return <AppShell title="شارك واربح" lead="حوّل توصيتك إلى دخل واضح ومستمر">
-    {query.isLoading ? <div className="grid min-h-[50vh] place-items-center"><Loader2 className="size-7 animate-spin text-primary" /></div> : query.isError || !dashboard ? <div className="border-t border-border py-12"><h2 className="font-display text-xl font-black">تعذّر تحميل لوحة الإحالة</h2><Button className="mt-5" onClick={() => void query.refetch()}>حاول مرة أخرى</Button></div> : <div className="space-y-8 pb-12">
-      <section className="relative isolate overflow-hidden rounded-2xl border border-gold/20 bg-ink px-5 py-9 text-primary-foreground sm:px-9 sm:py-12">
-        <LuxStage variant="radar" />
-        <div className="relative z-10 grid gap-8 lg:grid-cols-[1fr_22rem] lg:items-center">
-          <div>
-            <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-sm font-black text-gold"><Sparkles className="size-4" /> نادي شركاء زياد</motion.p>
-            <motion.h2 initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .08 }} className="mt-3 max-w-3xl font-display text-3xl font-black leading-tight sm:text-5xl">كل ترشيح صادق يمكن أن يبني لك دخلاً يتكرر.</motion.h2>
-            <p className="mt-4 max-w-xl text-sm leading-7 text-primary-foreground/70">شارك زياد مع أصحاب الأعمال الذين تثق بهم، واربح من مدفوعاتهم المؤكدة بنسبة تبدأ من ٢٠٪ وتصل إلى ٥٠٪.</p>
-            <div className="mt-6 flex flex-wrap gap-2 text-xs font-black"><span className="rounded-full border border-gold/25 bg-primary-foreground/5 px-3 py-1.5 backdrop-blur"><Zap className="me-1 inline size-3.5 text-gold" /> تتبع لحظي</span><span className="rounded-full border border-gold/25 bg-primary-foreground/5 px-3 py-1.5 backdrop-blur"><CheckCircle2 className="me-1 inline size-3.5 text-jade" /> مدفوعات موثقة</span><span className="rounded-full border border-gold/25 bg-primary-foreground/5 px-3 py-1.5 backdrop-blur"><Scale className="me-1 inline size-3.5 text-gold" /> شروط شفافة</span></div>
-          </div>
-          <PartnerCard rate={dashboard.rate} level={currentLevel.name} code={dashboard.code} />
+  const canWithdraw = !!dashboard && dashboard.totals.available >= 5000 && dashboard.totals.reserved === 0;
+  const stats = dashboard ? [
+    { label: "حسابات جديدة", value: dashboard.signups, icon: Users, tone: "rc-tone-teal" },
+    { label: "زيارات الرابط", value: dashboard.clicks, icon: MousePointerClick, tone: "rc-tone-gold" },
+    { label: "معدل التحويل", value: conversionRate, icon: TrendingUp, tone: "rc-tone-terra", pct: true },
+    { label: "عملاء نشطون", value: dashboard.active, icon: UserCheck, tone: "rc-tone-teal" },
+  ] : [];
+  const fillPct = (currentLevelIndex / (levels.length - 1)) * 75;
+
+  return <AppShell title="نادي شركاء زياد" lead="رشّح زياد لمن تثق به، واربح من كل دفعة مؤكدة">
+    {query.isLoading ? <div className="grid min-h-[50vh] place-items-center"><Loader2 className="size-7 animate-spin text-primary" /></div> : query.isError || !dashboard ? <div className="border-t border-border py-12"><h2 className="font-display text-xl font-black">تعذّر تحميل لوحة الإحالة</h2><Button className="mt-5" onClick={() => void query.refetch()}>حاول مرة أخرى</Button></div> :
+    <div className="rc mb-12 space-y-6 sm:space-y-8" dir="rtl">
+      <div className="rc-smoke" aria-hidden="true"><i /><i /><i /></div>
+
+      {/* 1) الهيرو + بطاقة الشريك */}
+      <section className="grid gap-7 pt-2 lg:grid-cols-[1fr_22rem] lg:items-center">
+        <div>
+          <p className="rc-eyebrow flex items-center gap-2"><Crown className="size-4" /> نادي شركاء زياد</p>
+          <h1 className="mt-3 text-[1.9rem] font-extrabold leading-[1.25] sm:text-5xl">رشّح زياد مرة،<br />واقبض كل شهر يدفع فيه عميلك.</h1>
+          <p className="rc-muted mt-4 max-w-xl text-sm leading-7 sm:text-base">عمولة تبدأ من ٢٠٪ من كل دفعة مؤكدة، وترتفع حتى ٥٠٪ كلما زاد عملاؤك النشطون. لا تسجيلات وهمية، ولا أرقام تقديرية.</p>
         </div>
+        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6 }} className="rc-card" aria-label={`بطاقة شريك زياد، مستوى ${currentLevel.name}، عمولة ${dashboard.rate}٪`}>
+          <div className="flex items-center justify-between"><span className="rc-gold flex items-center gap-2 text-sm font-extrabold"><Crown className="size-5" /> شريك زياد</span><span className="rc-pill rc-tone-gold">مستوى {currentLevel.name}</span></div>
+          <div><p className="rc-num rc-rate">{dashboard.rate.toLocaleString("ar")}٪</p><p className="rc-muted mt-2 text-xs font-bold">عمولتك الحالية من كل دفعة مؤكدة</p></div>
+          <p className="rc-code" dir="ltr">ID · {dashboard.code.toUpperCase()}</p>
+        </motion.div>
       </section>
 
-      <section className="grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-3" aria-label="حالة أرباحك">
-        <div className="bg-card p-5"><p className="text-xs font-black text-muted-foreground">عمولتك الآن</p><p className="mt-2 font-display text-4xl font-black text-primary">{dashboard.rate.toLocaleString("ar")}٪</p><p className="mt-1 text-xs text-muted-foreground">مستوى {currentLevel.name}</p></div>
-        <div className="bg-card p-5"><p className="text-xs font-black text-muted-foreground">إجمالي ما كسبته</p><p className="mt-2 font-display text-4xl font-black">{money(dashboard.totals.earned)}</p><p className="mt-1 text-xs text-muted-foreground">من مدفوعات مؤكدة فقط</p></div>
-        <div className="relative overflow-hidden bg-gold-soft p-5"><Coins className="absolute -bottom-3 -left-3 size-24 text-gold/15" /><p className="relative text-xs font-black text-gold-deep">الرصيد الجاهز للسحب</p><p className="relative mt-2 font-display text-4xl font-black text-gold-deep">{money(dashboard.totals.available)}</p><p className="relative mt-1 text-xs text-gold-deep/70">الحد الأدنى ٥٠ دولاراً</p></div>
-      </section>
-
-      <section aria-labelledby="share-title">
-        <div className="mb-4 flex items-end justify-between gap-4"><div><h2 id="share-title" className="font-display text-xl font-black">أرسل أول دعوة الآن</h2><p className="mt-1 text-sm text-muted-foreground">اختر شخصاً سيستفيد فعلاً؛ الثقة تحوّل أفضل من الإرسال العشوائي.</p></div><Gift className="size-6 text-primary" /></div>
-        <div className="flex flex-col gap-3 rounded-lg border border-border bg-secondary/30 p-4 sm:flex-row">
-          <div className="flex min-w-0 flex-1 items-center gap-3 rounded-md border border-border bg-secondary/40 px-4 py-3" dir="ltr"><Link2 className="size-4 shrink-0 text-primary" /><code className="min-w-0 flex-1 truncate text-xs font-bold sm:text-sm">{referralUrl}</code></div>
-          <Button variant="outline" className="h-12 font-black" onClick={copyLink}><Copy /> نسخ</Button>
-          <Button className="h-12 font-black" onClick={() => void shareLink()}><Share2 /> مشاركة الرابط</Button>
-        </div>
-        <p className="mt-3 flex items-start gap-2 text-xs leading-6 text-muted-foreground"><Scale className="mt-1 size-3.5 shrink-0 text-gold-deep" /> عند المشاركة أفصح بوضوح أنه رابط إحالة وقد تحصل على عمولة، ولا تَعِد بدخل أو نتائج مضمونة. مشاركتك تعني موافقتك على <Link to="/referral-terms" className="font-bold text-foreground underline underline-offset-4">شروط برنامج الإحالة</Link>.</p>
-      </section>
-
-      <section className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border lg:grid-cols-4" aria-label="ملخص الإحالات">
-        {stats.map((stat, index) => <motion.div key={stat.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * .06 }} className="bg-card p-4 sm:p-5"><stat.icon className="size-5 text-primary" /><p className="mt-5 font-display text-2xl font-black sm:text-3xl">{stat.value}</p><p className="mt-1 text-xs font-bold text-muted-foreground">{stat.label}</p></motion.div>)}
-      </section>
-
-      <section className="grid gap-6 lg:grid-cols-[1.25fr_.75fr]">
-        <div className="border-t border-border pt-6">
-          <div className="flex items-start justify-between gap-4"><div><h2 className="font-display text-xl font-black">طريقك إلى ٥٠٪</h2><p className="mt-1 text-sm text-muted-foreground">المستوى يعتمد على عدد العملاء النشطين.</p></div>{nextLevel ? <span className="text-xs font-black text-primary">باقي {(nextLevel.count - dashboard.active).toLocaleString("ar")}</span> : <span className="text-xs font-black text-jade">أعلى مستوى</span>}</div>
-          <Progress value={Math.max(0, Math.min(100, progress))} className="mt-6 h-2" />
-          <div className="mt-5 grid grid-cols-4 gap-2">
-            {levels.map((level) => { const reached = dashboard.active >= level.count; return <div key={level.rate} className="text-center"><span className={`mx-auto grid size-7 place-items-center rounded-full border text-xs font-black ${reached ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground"}`}>{reached ? <Check className="size-4" /> : level.count.toLocaleString("ar")}</span><p className="mt-2 text-xs font-black">{level.rate.toLocaleString("ar")}٪</p><p className="hidden text-[0.65rem] text-muted-foreground sm:block">{level.name}</p></div>; })}
+      {/* 2) رابط الإحالة */}
+      <section className="liquid-glass-sahl p-4 sm:p-6" aria-labelledby="share-title">
+        <h2 id="share-title" className="text-lg font-extrabold">رابطك الخاص</h2>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 flex-1 items-center gap-3 rounded-xl border px-4 py-3" style={{ borderColor: "var(--rc-faint)" }} dir="ltr"><Link2 className="rc-gold size-4 shrink-0" /><code className="min-w-0 flex-1 truncate text-xs font-bold sm:text-sm">{referralUrl}</code></div>
+          <div className="flex items-center gap-2">
+            <button type="button" className="rc-btn rc-btn-terra flex-1 sm:flex-none" onClick={() => void copyLink()}><Copy className="size-4" /> نسخ</button>
+            <a className="rc-icon rc-tone-teal" href={`https://wa.me/?text=${encodeURIComponent(`${shareText} ${referralUrl}`)}`} target="_blank" rel="noreferrer" aria-label="مشاركة عبر واتساب"><WhatsAppIcon /></a>
+            <a className="rc-icon rc-tone-gold" href={`https://x.com/intent/post?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(referralUrl)}`} target="_blank" rel="noreferrer" aria-label="مشاركة عبر إكس"><XIcon /></a>
+            <button type="button" className="rc-icon rc-tone-terra" onClick={() => void copyLink()} aria-label="نسخ الرابط"><Copy className="size-[1.1rem]" /></button>
           </div>
         </div>
-        <div className="rounded-lg border border-border bg-secondary/35 p-5">
-          <div className="flex items-center gap-3"><WalletCards className="size-5 text-jade" /><h2 className="font-display text-lg font-black">الرصيد المتاح</h2></div>
-          <p className="mt-5 font-display text-4xl font-black">{money(dashboard.totals.available)}</p>
-          <div className="mt-4 grid grid-cols-2 gap-3 text-xs"><div><p className="text-muted-foreground">قيد الانتظار</p><p className="mt-1 font-black">{money(dashboard.totals.pending)}</p></div><div><p className="text-muted-foreground">تم دفعه</p><p className="mt-1 font-black">{money(dashboard.totals.paid)}</p></div></div>
-          <Button className="mt-6 w-full font-black" disabled={dashboard.totals.available < 5000 || dashboard.totals.reserved > 0} onClick={() => setWithdrawOpen(true)}>طلب سحب الأرباح <ArrowLeft /></Button>
-          <p className="mt-3 text-center text-[0.68rem] leading-5 text-muted-foreground">الحد الأدنى ٥٠ دولاراً. العمولات تصبح متاحة بعد فترة مراجعة ٣٠ يوماً.</p>
+        <p className="rc-muted mt-3 text-xs leading-6">عمولة {dashboard.rate.toLocaleString("ar")}٪ من كل دفعة مؤكدة · تبقى معلّقة ٣٠ يوماً قبل أن تصبح متاحة · أفصح دائماً أنه رابط إحالة، وراجع <Link to="/referral-terms" className="underline underline-offset-4" style={{ color: "var(--rc-cream)" }}>شروط البرنامج</Link>.</p>
+        <button type="button" className="rc-btn rc-btn-grad mt-5 w-full sm:w-auto" onClick={() => void shareLink()}><Share2 className="size-4" /> مشاركة الرابط</button>
+      </section>
+
+      {/* 3) الإحصائيات */}
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="ملخص الإحالات">
+        {stats.map((s) => <div key={s.label} className="liquid-glass-sahl p-4 sm:p-5"><span className={`rc-icon ${s.tone} !size-10`}><s.icon className="size-5" /></span><p className="rc-num mt-4 text-3xl font-extrabold sm:text-4xl"><CountUp value={s.value} format={(n) => `${Math.round(n).toLocaleString("ar")}${s.pct ? "٪" : ""}`} /></p><p className="rc-muted mt-1 text-xs font-bold">{s.label}</p></div>)}
+      </section>
+
+      {/* 4) المستويات + 5) الرصيد */}
+      <section className="grid gap-4 lg:grid-cols-[1.3fr_.7fr]">
+        <div className="liquid-glass-sahl p-5 sm:p-6">
+          <h2 className="text-lg font-extrabold">طريقك إلى ٥٠٪</h2>
+          <p className="rc-muted mt-1 text-xs">المستوى يعتمد على عدد عملائك النشطين.</p>
+          <div className="rc-steps mt-7" role="list">
+            <span className="rc-steps-fill" style={{ width: `${fillPct}%` }} aria-hidden="true" />
+            {levels.map((level, i) => { const state = i < currentLevelIndex ? "is-done" : i === currentLevelIndex ? "is-current" : ""; return <div key={level.rate} className="rc-step" role="listitem" aria-current={i === currentLevelIndex ? "step" : undefined}>
+              <span className={`rc-dot ${state}`}>{state === "is-done" ? <Check className="size-4" /> : (i + 1).toLocaleString("ar")}</span>
+              <span className={`rc-num text-sm font-extrabold ${i === currentLevelIndex ? "rc-terra" : ""}`}>{level.rate.toLocaleString("ar")}٪</span>
+              <span className="rc-muted text-[0.68rem] font-bold">{level.name}</span>
+            </div>; })}
+          </div>
+          <p className="mt-6 rounded-xl px-4 py-3 text-sm font-bold" style={{ background: "var(--rc-faint)" }}>{nextLevel ? <>باقٍ {(nextLevel.count - dashboard.active).toLocaleString("ar")} {nextLevel.count - dashboard.active === 1 ? "عميل نشط" : "عملاء نشطين"} للوصول لنسبة {nextLevel.rate.toLocaleString("ar")}٪</> : <>وصلت لأعلى مستوى — عمولتك ٥٠٪ 🎉</>}</p>
+        </div>
+
+        <div className="liquid-glass-sahl flex flex-col p-5 sm:p-6" style={{ borderColor: "color-mix(in oklab, var(--rc-gold) 30%, transparent)" }}>
+          <div className="flex items-center gap-2"><WalletCards className="rc-teal size-5" /><h2 className="text-lg font-extrabold">الرصيد المتاح</h2></div>
+          <p className="rc-num rc-gold mt-4 text-4xl font-extrabold"><CountUp value={dashboard.totals.available} format={money} /></p>
+          <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+            <div className="rounded-xl p-3" style={{ background: "var(--rc-faint)" }}><p className="rc-muted">تم دفعه</p><p className="rc-num mt-1 text-base font-extrabold">{money(dashboard.totals.paid)}</p></div>
+            <div className="rounded-xl p-3" style={{ background: "var(--rc-faint)" }}><p className="rc-muted">قيد الانتظار</p><p className="rc-num mt-1 text-base font-extrabold">{money(dashboard.totals.pending)}</p></div>
+          </div>
+          <p className="rc-muted mt-3 text-xs">إجمالي ما كسبته: <strong style={{ color: "var(--rc-cream)" }}>{money(dashboard.totals.earned)}</strong></p>
+          <button type="button" className="rc-btn rc-btn-terra mt-5 w-full" disabled={!canWithdraw} onClick={() => setWithdrawOpen(true)}>طلب سحب الأرباح <ArrowLeft className="size-4" /></button>
+          <p className="rc-muted mt-3 text-center text-[0.68rem] leading-5">الحد الأدنى ٥٠ دولاراً · العمولات تصبح متاحة بعد مراجعة ٣٠ يوماً</p>
         </div>
       </section>
 
-      <section className="border-t border-border pt-6">
-        <div className="mb-4 flex items-center justify-between"><div><h2 className="font-display text-xl font-black">آخر الإحالات</h2><p className="mt-1 text-sm text-muted-foreground">لا نعرض بيانات شخصية لعملائك.</p></div><Gift className="size-5 text-primary" /></div>
-        {dashboard.referrals.length ? <Table><TableHeader><TableRow><TableHead className="text-right">الإحالة</TableHead><TableHead className="text-right">الحالة</TableHead><TableHead className="text-right">تاريخ التسجيل</TableHead><TableHead className="text-right">أول دفعة</TableHead></TableRow></TableHeader><TableBody>{dashboard.referrals.slice(0, 8).map((referral) => { const status = referralStatuses[referral.status] ?? { label: "سجّل", className: "bg-secondary text-secondary-foreground" }; return <TableRow key={referral.id}><TableCell className="font-bold">{referral.label}</TableCell><TableCell><span className={`inline-flex rounded-full px-2 py-1 text-[0.68rem] font-black ${status.className}`}>{status.label}</span></TableCell><TableCell className="text-muted-foreground">{new Date(referral.attributedAt).toLocaleDateString("ar")}</TableCell><TableCell className="text-muted-foreground">{referral.firstPaidAt ? new Date(referral.firstPaidAt).toLocaleDateString("ar") : "—"}</TableCell></TableRow>; })}</TableBody></Table> : <div className="grid min-h-40 place-items-center rounded-lg border border-dashed border-border bg-secondary/20 px-6 text-center"><div><Users className="mx-auto size-6 text-muted-foreground" /><p className="mt-3 text-sm font-black">أول إحالة تبدأ من مشاركة واحدة</p><p className="mt-1 text-xs text-muted-foreground">انسخ رابطك وأرسله لشخص تعرف أنه سيستفيد.</p></div></div>}
+      {/* 6) آخر الإحالات */}
+      <section className="liquid-glass-sahl p-5 sm:p-6">
+        <h2 className="text-lg font-extrabold">آخر الإحالات</h2>
+        {dashboard.referrals.length ? <ol className="rc-timeline mt-5 space-y-4">
+          {dashboard.referrals.slice(0, 8).map((r) => { const st = referralStatuses[r.status] ?? { label: "قيد الانتظار", tone: "rc-tone-gold" }; return <li key={r.id} className="flex flex-wrap items-center justify-between gap-2">
+            <div><p className="text-sm font-extrabold">عميل جديد</p><p className="rc-muted text-xs">{dateAr(r.attributedAt)}{r.firstPaidAt ? ` · أول دفعة ${dateAr(r.firstPaidAt)}` : ""}</p></div>
+            <span className={`rc-pill ${st.tone}`}>{st.label}</span>
+          </li>; })}
+        </ol> : <div className="mt-5 rounded-xl border border-dashed p-6 text-center" style={{ borderColor: "var(--rc-faint)" }}><p className="text-sm font-extrabold">لا إحالات بعد</p><p className="rc-muted mt-1 text-xs">أرسل رابطك لأول شخص تثق أن زياد سيفيده، وستظهر إحالته هنا فوراً.</p></div>}
+        <p className="rc-muted mt-5 text-xs">لا نعرض بيانات شخصية لعملائك.</p>
       </section>
 
-      <section className="grid gap-4 border-t border-border pt-6 sm:grid-cols-3">
-        {[{ icon: DollarSign, title: "عمولة على المدفوع", text: "تُحتسب العمولة فقط بعد دفع العميل فعلياً، وليست على مجرد التسجيل." }, { icon: Clock3, title: "مراجعة ٣٠ يوماً", text: "تبقى العمولة معلّقة خلال فترة الاسترداد، ثم تنتقل إلى رصيدك المتاح." }, { icon: CheckCircle2, title: "أرقام قابلة للتدقيق", text: "الاسترداد أو إلغاء الدفع يعكس العمولة تلقائياً ويحفظ السبب في السجل." }].map((item) => <article key={item.title} className="border-r-2 border-border pr-4"><item.icon className="size-5 text-primary" /><h3 className="mt-3 text-sm font-black">{item.title}</h3><p className="mt-1 text-xs leading-6 text-muted-foreground">{item.text}</p></article>)}
+      {/* 7) الشفافية */}
+      <section aria-labelledby="clear-title">
+        <h2 id="clear-title" className="text-lg font-extrabold">أرباح واضحة، بلا مفاجآت</h2>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          {[{ icon: CheckCircle2, tone: "rc-tone-teal", title: "كيف تُحتسب", text: "نسبة مستواك من كل دفعة يدفعها العميل فعلياً، لا من مجرد التسجيل." },
+            { icon: Clock3, tone: "rc-tone-gold", title: "متى تُصرف", text: "بعد ٣٠ يوماً من الدفعة تصبح متاحة، وتسحبها عند بلوغ ٥٠ دولاراً." },
+            { icon: RotateCcw, tone: "rc-tone-terra", title: "عند الاسترداد", text: "إذا استُرد المبلغ تُعكس العمولة تلقائياً ويُحفظ السبب في سجلك." }].map((p) => <div key={p.title} className="liquid-glass-sahl flex gap-3 p-4"><span className={`rc-icon ${p.tone} !size-10 shrink-0`}><p.icon className="size-5" /></span><div><h3 className="text-sm font-extrabold">{p.title}</h3><p className="rc-muted mt-1 text-xs leading-6">{p.text}</p></div></div>)}
+        </div>
       </section>
-      <section className="flex flex-col items-start justify-between gap-4 rounded-lg border border-border bg-secondary/40 p-5 sm:flex-row sm:items-center"><div><h2 className="font-display text-lg font-black">أرباح واضحة، بلا مفاجآت</h2><p className="mt-1 text-xs leading-6 text-muted-foreground">راجع قواعد احتساب العمولة، الاسترداد، السحب والترويج المسموح قبل المشاركة.</p></div><Button asChild variant="outline" className="shrink-0 font-black"><Link to="/referral-terms"><Scale /> شروط برنامج الإحالة</Link></Button></section>
+
+      {/* 8) موارد الشريك */}
+      <section aria-labelledby="res-title">
+        <h2 id="res-title" className="text-lg font-extrabold">موارد الشريك</h2>
+        <div className="mt-4 grid gap-3 lg:grid-cols-3">
+          <div className="liquid-glass-sahl p-5"><span className="rc-icon rc-tone-teal !size-10"><BookOpen className="size-5" /></span><h3 className="mt-3 text-sm font-extrabold">كيف يعمل البرنامج</h3>
+            <ol className="rc-muted mt-2 space-y-1.5 text-xs leading-6">{["انسخ رابطك وشاركه مع من تثق به", "يسجّل ويشترك في زياد", "تُحتسب عمولتك من كل دفعة مؤكدة", "اسحب رصيدك بعد فترة المراجعة"].map((s, i) => <li key={s}><span className="rc-gold font-extrabold">{(i + 1).toLocaleString("ar")}.</span> {s}</li>)}</ol></div>
+          <div className="liquid-glass-sahl flex flex-col p-5"><span className="rc-icon rc-tone-gold !size-10"><Download className="size-5" /></span><h3 className="mt-3 text-sm font-extrabold">أصول العلامة</h3><p className="rc-muted mt-2 flex-1 text-xs leading-6">شعار زياد بجودة عالية لاستخدامه في منشوراتك عند مشاركة رابطك.</p>
+            <div className="mt-4 flex flex-wrap gap-2"><a href={logoUrl} download="ziad-logo.png" className="rc-btn rc-btn-ghost !min-h-10 text-xs"><Download className="size-4" /> تحميل الشعار</a><Link to="/referral-terms" className="rc-btn rc-btn-ghost !min-h-10 text-xs"><Scale className="size-4" /> الشروط</Link></div></div>
+          <div className="liquid-glass-sahl p-5"><span className="rc-icon rc-tone-terra !size-10"><HelpCircle className="size-5" /></span><h3 className="mt-3 text-sm font-extrabold">الأسئلة الشائعة</h3>
+            <div className="mt-2 divide-y" style={{ borderColor: "var(--rc-faint)" }}>{faqs.map((f) => <details key={f.q} className="group py-2" style={{ borderColor: "var(--rc-faint)" }}><summary className="flex items-center justify-between gap-2 text-xs font-extrabold">{f.q}<ChevronDown className="size-4 shrink-0 transition-transform group-open:rotate-180" /></summary><p className="rc-muted mt-2 text-xs leading-6">{f.a}</p></details>)}</div></div>
+        </div>
+      </section>
     </div>}
 
     <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
