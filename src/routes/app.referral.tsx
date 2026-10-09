@@ -1,13 +1,15 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { motion } from "motion/react";
-import { ArrowLeft, Check, CheckCircle2, Clock3, Coins, Copy, Crown, DollarSign, Gift, Link2, Loader2, MousePointerClick, Scale, Share2, Sparkles, TrendingUp, UserCheck, Users, WalletCards, Zap } from "lucide-react";
+import { ArrowLeft, Check, CheckCircle2, Clock3, Coins, Copy, Crown, DollarSign, Gift, Link2, Loader2, MousePointerClick, Scale, Send, Share2, Sparkles, TrendingUp, UserCheck, Users, WalletCards, X, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app/AppShell";
-import { LuxStage } from "@/components/app/LuxStage";
+import { LogoMark } from "@/components/site/LogoMark";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -49,20 +51,49 @@ function money(cents: number) {
 }
 
 function PartnerCard({ rate, level, code }: { rate: number; level: string; code: string }) {
-  return <motion.div initial={{ opacity: 0, rotateX: 18, y: 16 }} animate={{ opacity: 1, rotateX: 0, y: [0, -6, 0] }} transition={{ opacity: { duration: .6 }, rotateX: { duration: .8 }, y: { duration: 5, repeat: Infinity, ease: "easeInOut" } }} className="lux-card" style={{ perspective: 800 }} aria-label={`بطاقة شريك سهل، مستوى ${level}، عمولة ${rate}٪`}>
-    <div className="relative z-10 flex h-full flex-col justify-between">
-      <div className="flex items-start justify-between"><div><p className="text-[0.62rem] font-black tracking-widest text-gold">SAHL PARTNER</p><p className="mt-1 font-display text-sm font-black">نادي الشركاء</p></div><Crown className="size-6 text-gold" aria-hidden="true" /></div>
-      <div className="flex items-end justify-between gap-3"><div className="lux-chip" aria-hidden="true" /><div className="text-left"><strong className="lux-gold-text block font-display text-5xl font-black leading-none">{rate.toLocaleString("ar")}٪</strong><span className="text-[0.65rem] font-bold text-gold-soft/70">عمولتك الحالية</span></div></div>
-      <div className="flex items-end justify-between text-[0.68rem]"><div><p className="text-gold-soft/55">المستوى</p><p className="font-black">{level}</p></div><code dir="ltr" className="font-black tracking-[0.25em] text-gold">{code.toUpperCase()}</code></div>
+  const ref = useRef<HTMLDivElement>(null);
+  function move(event: React.PointerEvent<HTMLDivElement>) {
+    const el = ref.current; if (!el || event.pointerType === "touch") return;
+    const r = el.getBoundingClientRect(); const x = (event.clientX - r.left) / r.width; const y = (event.clientY - r.top) / r.height;
+    el.style.setProperty("--ry", `${(x - .5) * 18}deg`); el.style.setProperty("--rx", `${(.5 - y) * 14}deg`);
+    el.style.setProperty("--mx", `${x * 100}%`); el.style.setProperty("--my", `${y * 100}%`);
+  }
+  function leave() { const el = ref.current; if (!el) return; el.style.setProperty("--rx", "0deg"); el.style.setProperty("--ry", "0deg"); }
+  return <motion.div initial={{ opacity: 0, y: 24, rotateX: 25 }} animate={{ opacity: 1, y: 0, rotateX: 0 }} transition={{ duration: .9, ease: [.2, .8, .2, 1] }} className="w-full" style={{ display: "grid", placeItems: "center" }}>
+    <div ref={ref} onPointerMove={move} onPointerLeave={leave} className="ref-card" role="img" aria-label={`بطاقة شريك زياد، مستوى ${level}، عمولة ${rate}٪`}>
+      <div className="relative z-10 flex h-full flex-col justify-between p-5 sm:p-6">
+        <div className="flex items-start justify-between gap-3">
+          <div className="ref-card-logo"><LogoMark size={52} /></div>
+          <div className="text-left" dir="ltr"><p className="text-[0.6rem] font-black tracking-[0.3em] text-gold">ZIAD PARTNER</p><p className="mt-1 text-[0.7rem] font-bold text-gold-soft/70" dir="rtl">نادي الشركاء · {level}</p></div>
+        </div>
+        <div className="flex items-end justify-between gap-3">
+          <div className="ref-chip" aria-hidden="true" />
+          <div className="text-left"><strong className="ref-gold-text block font-display text-5xl font-black leading-none">{rate.toLocaleString("ar")}٪</strong><span className="text-[0.65rem] font-bold text-gold-soft/65">عمولتك الحالية</span></div>
+        </div>
+        <div className="flex items-end justify-between text-[0.68rem]" dir="ltr">
+          <code className="font-black tracking-[0.28em] text-gold-soft">{code.toUpperCase().replace(/(.{4})/g, "$1 ").trim()}</code>
+          <span className="font-display text-sm font-black tracking-widest text-gold">ZIAD</span>
+        </div>
+      </div>
     </div>
   </motion.div>;
 }
+
+const faqs = [
+  { q: "متى تُحتسب العمولة؟", a: "فقط بعد دفع العميل فعلياً. مجرد التسجيل لا يُحتسب، والعمولة تتكرر مع كل دفعة مؤكدة." },
+  { q: "متى أستطيع سحب أرباحي؟", a: "تبقى العمولة معلّقة ٣٠ يوماً (فترة الاسترداد)، ثم تنتقل للرصيد المتاح. الحد الأدنى للسحب ٥٠ دولاراً." },
+  { q: "كيف أرتقي لعمولة أعلى؟", a: "المستوى يعتمد على عدد عملائك النشطين: ٥ عملاء = ٣٠٪، ١٠ = ٤٠٪، ٢٥ = ٥٠٪." },
+  { q: "ماذا يحدث عند الاسترداد؟", a: "يُعكس مبلغ العمولة المرتبط تلقائياً ويُحفظ السبب في السجل، فتبقى أرقامك دقيقة." },
+];
 
 function ReferralPage() {
   const load = useServerFn(getReferralDashboard);
   const payout = useServerFn(requestReferralPayout);
   const qc = useQueryClient();
   const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [bannerOpen, setBannerOpen] = useState(true);
+  const [tab, setTab] = useState("start");
+  const [copied, setCopied] = useState(false);
   const [method, setMethod] = useState<"bank" | "paypal" | "wallet">("bank");
   const [destination, setDestination] = useState("");
   const query = useQuery({ queryKey: ["referral-dashboard"], queryFn: () => load() });
@@ -93,76 +124,129 @@ function ReferralPage() {
   async function copyLink() {
     if (!referralUrl) return;
     await navigator.clipboard.writeText(referralUrl);
+    setCopied(true); setTimeout(() => setCopied(false), 1800);
     toast.success("تم نسخ رابطك");
   }
 
   async function shareLink() {
     if (!referralUrl) return;
-    if (navigator.share) await navigator.share({ title: "جرّب زياد", text: "ترشيحي لك لتجربة زياد وفريقه الذكي. (رابط إحالة: قد أحصل على عمولة إذا اشتركت)", url: referralUrl });
+    if (navigator.share) await navigator.share({ title: "جرّب زياد", text: "ترشيحي لك لتجربة زياد وفريقه الذكي. (رابط إحالة: قد أحصل على عمولة إذا اشتركت)", url: referralUrl }).catch(() => undefined);
     else await copyLink();
   }
 
+  const hasActivity = !!dashboard && (dashboard.clicks > 0 || dashboard.signups > 0);
+
   return <AppShell title="شارك واربح" lead="حوّل توصيتك إلى دخل واضح ومستمر">
-    {query.isLoading ? <div className="grid min-h-[50vh] place-items-center"><Loader2 className="size-7 animate-spin text-primary" /></div> : query.isError || !dashboard ? <div className="border-t border-border py-12"><h2 className="font-display text-xl font-black">تعذّر تحميل لوحة الإحالة</h2><Button className="mt-5" onClick={() => void query.refetch()}>حاول مرة أخرى</Button></div> : <div className="space-y-8 pb-12">
-      <section className="relative isolate overflow-hidden rounded-2xl border border-gold/20 bg-ink px-5 py-9 text-primary-foreground sm:px-9 sm:py-12">
-        <LuxStage variant="radar" />
-        <div className="relative z-10 grid gap-8 lg:grid-cols-[1fr_22rem] lg:items-center">
+    {query.isLoading ? <div className="grid min-h-[50vh] place-items-center"><Loader2 className="size-7 animate-spin text-primary" /></div> : query.isError || !dashboard ? <div className="border-t border-border py-12"><h2 className="font-display text-xl font-black">تعذّر تحميل لوحة الإحالة</h2><Button className="mt-5" onClick={() => void query.refetch()}>حاول مرة أخرى</Button></div> : <div className="space-y-5 pb-12">
+
+      {bannerOpen && <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-2xl border-2 border-foreground bg-gold-soft p-5 shadow-[6px_6px_0_0_var(--foreground)] sm:p-7">
+        <button type="button" onClick={() => setBannerOpen(false)} aria-label="إخفاء" className="absolute left-3 top-3 z-20 grid size-8 place-items-center rounded-full border-2 border-foreground bg-background transition hover:scale-105"><X className="size-4" /></button>
+        <div className="grid items-center gap-6 md:grid-cols-[1fr_auto]">
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 text-xs font-black text-gold-deep"><Sparkles className="size-4" /> نادي شركاء زياد</p>
+            <h2 className="mt-2 max-w-2xl font-display text-2xl font-black leading-tight sm:text-4xl">ساعد أصحاب الأعمال على توظيف أول فريق ذكي — واربح حتى ٥٠٪ مدى الحياة.</h2>
+            <p className="mt-3 max-w-xl text-sm leading-7 text-foreground/70">عمولة متكررة على كل دفعة مؤكدة من عملائك، تبدأ من ٢٠٪ وترتفع مع كل عميل نشط.</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {[{ icon: Zap, t: "تتبع لحظي" }, { icon: CheckCircle2, t: "مدفوعات موثقة" }, { icon: Scale, t: "شروط شفافة" }].map((c) => <span key={c.t} className="inline-flex items-center gap-1.5 rounded-lg border-2 border-foreground bg-background px-3 py-1.5 text-xs font-black"><c.icon className="size-3.5 text-gold-deep" /> {c.t}</span>)}
+            </div>
+            <Button onClick={() => void shareLink()} className="mt-5 h-12 rounded-xl border-2 border-foreground px-6 font-black shadow-[4px_4px_0_0_var(--foreground)] transition hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_var(--foreground)]"><Share2 /> شارك رابطك الآن <ArrowLeft /></Button>
+          </div>
+          <div className="relative hidden h-44 w-60 md:block" aria-hidden="true">
+            <div className="absolute inset-0 rotate-6 rounded-2xl border-2 border-foreground bg-gold" />
+            <div className="absolute inset-0 -rotate-3 rounded-2xl border-2 border-foreground bg-background p-4">
+              <div className="flex items-center gap-2"><LogoMark size={36} /><div><p className="text-xs font-black">زياد</p><p className="text-[0.6rem] text-muted-foreground">فريقك الذكي</p></div></div>
+              <div className="mt-4 space-y-2">{[90, 70, 82].map((w) => <div key={w} className="h-2 rounded-full bg-gold-soft" style={{ width: `${w}%` }} />)}</div>
+              <div className="mt-4 flex items-center justify-between"><span className="text-[0.65rem] font-black text-gold-deep">+ {dashboard.rate.toLocaleString("ar")}٪</span><Coins className="size-5 text-gold" /></div>
+            </div>
+          </div>
+        </div>
+      </motion.section>}
+
+      <section className="grid overflow-hidden rounded-2xl border border-border bg-card lg:grid-cols-[1.05fr_.95fr]">
+        <div className="space-y-6 p-5 sm:p-6">
           <div>
-            <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-sm font-black text-gold"><Sparkles className="size-4" /> نادي شركاء زياد</motion.p>
-            <motion.h2 initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .08 }} className="mt-3 max-w-3xl font-display text-3xl font-black leading-tight sm:text-5xl">كل ترشيح صادق يمكن أن يبني لك دخلاً يتكرر.</motion.h2>
-            <p className="mt-4 max-w-xl text-sm leading-7 text-primary-foreground/70">شارك زياد مع أصحاب الأعمال الذين تثق بهم، واربح من مدفوعاتهم المؤكدة بنسبة تبدأ من ٢٠٪ وتصل إلى ٥٠٪.</p>
-            <div className="mt-6 flex flex-wrap gap-2 text-xs font-black"><span className="rounded-full border border-gold/25 bg-primary-foreground/5 px-3 py-1.5 backdrop-blur"><Zap className="me-1 inline size-3.5 text-gold" /> تتبع لحظي</span><span className="rounded-full border border-gold/25 bg-primary-foreground/5 px-3 py-1.5 backdrop-blur"><CheckCircle2 className="me-1 inline size-3.5 text-jade" /> مدفوعات موثقة</span><span className="rounded-full border border-gold/25 bg-primary-foreground/5 px-3 py-1.5 backdrop-blur"><Scale className="me-1 inline size-3.5 text-gold" /> شروط شفافة</span></div>
+            <div className="mb-2 flex items-center justify-between gap-3"><h3 className="text-sm font-black">رابط الإحالة الخاص بك</h3><Link to="/referral-terms" className="text-[0.7rem] font-bold text-muted-foreground underline-offset-4 hover:underline">الشروط ↗</Link></div>
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+              <div className="flex min-w-0 items-center gap-2 rounded-xl border border-border bg-background px-3" dir="ltr"><Link2 className="size-4 shrink-0 text-gold-deep" /><code className="min-w-0 flex-1 truncate py-3 text-xs font-bold sm:text-sm">{referralUrl}</code></div>
+              <Button onClick={() => void copyLink()} className="h-12 rounded-xl bg-foreground px-4 font-black text-background hover:bg-foreground/90">{copied ? <Check /> : <Copy />} {copied ? "تم" : "نسخ"}</Button>
+            </div>
+            <p className="mt-2 text-[0.7rem] text-muted-foreground">رابطك يحمل رمزك <code dir="ltr" className="rounded bg-muted px-1 font-black text-foreground">{dashboard.code}</code> تلقائياً — أي شخص يسجّل منه يُنسب إليك.</p>
           </div>
+          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+            <li className="flex items-center gap-3 px-4 py-3 text-sm"><Coins className="size-4 shrink-0 text-gold-deep" /> <span><b>{dashboard.rate.toLocaleString("ar")}٪</b> من كل دفعة لعميلك طوال اشتراكه</span></li>
+            <li className="flex items-center gap-3 px-4 py-3 text-sm"><Crown className="size-4 shrink-0 text-gold-deep" /> <span>ارتقِ حتى <b>٥٠٪</b> مع ٢٥ عميلاً نشطاً</span></li>
+            <li className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-muted/50 px-4 py-2 text-[0.7rem] text-muted-foreground"><span><b className="text-foreground">٥٠$</b> حد أدنى للسحب</span><span>•</span><span><b className="text-foreground">٣٠ يوماً</b> فترة مراجعة</span></li>
+          </ul>
+          <div className="flex gap-2"><Button variant="outline" className="h-11 flex-1 rounded-xl font-black" onClick={() => void shareLink()}><Share2 /> مشاركة</Button><Button asChild variant="outline" className="h-11 flex-1 rounded-xl font-black"><a href={`https://wa.me/?text=${encodeURIComponent(`جرّب زياد وفريقه الذكي (رابط إحالة): ${referralUrl}`)}`} target="_blank" rel="noreferrer"><Send /> واتساب</a></Button></div>
+        </div>
+        <div className="ref-stage min-h-72 border-t border-border lg:border-r lg:border-t-0">
           <PartnerCard rate={dashboard.rate} level={currentLevel.name} code={dashboard.code} />
+          <div className="ref-shadow" aria-hidden="true" />
+          <span className="absolute left-3 top-3 rounded-md border border-border bg-background/80 px-2 py-1 text-[0.6rem] font-black text-muted-foreground backdrop-blur">بطاقة شريك رسمية</span>
         </div>
       </section>
 
-      <section className="grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-3" aria-label="حالة أرباحك">
-        <div className="bg-card p-5"><p className="text-xs font-black text-muted-foreground">عمولتك الآن</p><p className="mt-2 font-display text-4xl font-black text-primary">{dashboard.rate.toLocaleString("ar")}٪</p><p className="mt-1 text-xs text-muted-foreground">مستوى {currentLevel.name}</p></div>
-        <div className="bg-card p-5"><p className="text-xs font-black text-muted-foreground">إجمالي ما كسبته</p><p className="mt-2 font-display text-4xl font-black">{money(dashboard.totals.earned)}</p><p className="mt-1 text-xs text-muted-foreground">من مدفوعات مؤكدة فقط</p></div>
-        <div className="relative overflow-hidden bg-gold-soft p-5"><Coins className="absolute -bottom-3 -left-3 size-24 text-gold/15" /><p className="relative text-xs font-black text-gold-deep">الرصيد الجاهز للسحب</p><p className="relative mt-2 font-display text-4xl font-black text-gold-deep">{money(dashboard.totals.available)}</p><p className="relative mt-1 text-xs text-gold-deep/70">الحد الأدنى ٥٠ دولاراً</p></div>
-      </section>
-
-      <section aria-labelledby="share-title">
-        <div className="mb-4 flex items-end justify-between gap-4"><div><h2 id="share-title" className="font-display text-xl font-black">أرسل أول دعوة الآن</h2><p className="mt-1 text-sm text-muted-foreground">اختر شخصاً سيستفيد فعلاً؛ الثقة تحوّل أفضل من الإرسال العشوائي.</p></div><Gift className="size-6 text-primary" /></div>
-        <div className="flex flex-col gap-3 rounded-lg border border-border bg-secondary/30 p-4 sm:flex-row">
-          <div className="flex min-w-0 flex-1 items-center gap-3 rounded-md border border-border bg-secondary/40 px-4 py-3" dir="ltr"><Link2 className="size-4 shrink-0 text-primary" /><code className="min-w-0 flex-1 truncate text-xs font-bold sm:text-sm">{referralUrl}</code></div>
-          <Button variant="outline" className="h-12 font-black" onClick={copyLink}><Copy /> نسخ</Button>
-          <Button className="h-12 font-black" onClick={() => void shareLink()}><Share2 /> مشاركة الرابط</Button>
+      <section className="grid gap-5 lg:grid-cols-[1.4fr_.6fr]">
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5">
+          {hasActivity ? <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{stats.map((stat, i) => <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * .06 }}><stat.icon className="size-4 text-gold-deep" /><p className="mt-3 font-display text-2xl font-black">{stat.value}</p><p className="text-xs font-bold text-muted-foreground">{stat.label}</p></motion.div>)}</div>
+            : <div className="relative grid min-h-32 place-items-center text-center"><svg className="absolute inset-0 h-full w-full text-gold/30" viewBox="0 0 400 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 80 C60 40 100 90 160 55 S260 70 300 40 S380 30 400 20" fill="none" stroke="currentColor" strokeWidth="2" /></svg><div className="relative"><MousePointerClick className="mx-auto size-5 text-gold-deep" /><p className="mt-2 text-sm font-black">لا يوجد نشاط بعد</p><p className="text-xs text-muted-foreground">بعد أول زيارة لرابطك ستظهر إحصاءاتك هنا</p></div></div>}
         </div>
-        <p className="mt-3 flex items-start gap-2 text-xs leading-6 text-muted-foreground"><Scale className="mt-1 size-3.5 shrink-0 text-gold-deep" /> عند المشاركة أفصح بوضوح أنه رابط إحالة وقد تحصل على عمولة، ولا تَعِد بدخل أو نتائج مضمونة. مشاركتك تعني موافقتك على <Link to="/referral-terms" className="font-bold text-foreground underline underline-offset-4">شروط برنامج الإحالة</Link>.</p>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center justify-between"><p className="flex items-center gap-1.5 text-xs font-black text-muted-foreground"><WalletCards className="size-4" /> الأرباح</p><button type="button" onClick={() => setTab("earnings")} className="rounded-md border border-border px-2 py-1 text-[0.65rem] font-black hover:bg-muted">التفاصيل</button></div>
+          <dl className="mt-4 space-y-2 text-sm">
+            <div className="flex justify-between"><dt className="text-muted-foreground">قيد الانتظار</dt><dd className="font-black" dir="ltr">{money(dashboard.totals.pending)}</dd></div>
+            <div className="flex justify-between"><dt className="text-muted-foreground">متاح للسحب</dt><dd className="font-black text-gold-deep" dir="ltr">{money(dashboard.totals.available)}</dd></div>
+            <div className="flex justify-between"><dt className="text-muted-foreground">تم دفعه</dt><dd className="font-black" dir="ltr">{money(dashboard.totals.paid)}</dd></div>
+          </dl>
+        </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border lg:grid-cols-4" aria-label="ملخص الإحالات">
-        {stats.map((stat, index) => <motion.div key={stat.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * .06 }} className="bg-card p-4 sm:p-5"><stat.icon className="size-5 text-primary" /><p className="mt-5 font-display text-2xl font-black sm:text-3xl">{stat.value}</p><p className="mt-1 text-xs font-bold text-muted-foreground">{stat.label}</p></motion.div>)}
-      </section>
+      <Tabs value={tab} onValueChange={setTab} dir="rtl">
+        <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-none border-b border-border bg-transparent p-0">
+          {([["start", "البداية"], ["earnings", "الأرباح"], ["referrals", "الإحالات"], ["levels", "المستويات"], ["faq", "الأسئلة"]] as const).map(([v, l]) => <TabsTrigger key={v} value={v} className="shrink-0 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-bold data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none">{l}</TabsTrigger>)}
+        </TabsList>
 
-      <section className="grid gap-6 lg:grid-cols-[1.25fr_.75fr]">
-        <div className="border-t border-border pt-6">
-          <div className="flex items-start justify-between gap-4"><div><h2 className="font-display text-xl font-black">طريقك إلى ٥٠٪</h2><p className="mt-1 text-sm text-muted-foreground">المستوى يعتمد على عدد العملاء النشطين.</p></div>{nextLevel ? <span className="text-xs font-black text-primary">باقي {(nextLevel.count - dashboard.active).toLocaleString("ar")}</span> : <span className="text-xs font-black text-jade">أعلى مستوى</span>}</div>
-          <Progress value={Math.max(0, Math.min(100, progress))} className="mt-6 h-2" />
-          <div className="mt-5 grid grid-cols-4 gap-2">
-            {levels.map((level) => { const reached = dashboard.active >= level.count; return <div key={level.rate} className="text-center"><span className={`mx-auto grid size-7 place-items-center rounded-full border text-xs font-black ${reached ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground"}`}>{reached ? <Check className="size-4" /> : level.count.toLocaleString("ar")}</span><p className="mt-2 text-xs font-black">{level.rate.toLocaleString("ar")}٪</p><p className="hidden text-[0.65rem] text-muted-foreground sm:block">{level.name}</p></div>; })}
+        <TabsContent value="start" className="mt-5">
+          <div className="grid gap-4 md:grid-cols-3">
+            {[
+              { icon: Link2, title: "شارك رابطك", text: "أرسله لأصحاب أعمال تثق أنهم سيستفيدون، وتابع كل زيارة وتسجيل.", action: <Button className="w-full rounded-xl bg-foreground font-black text-background hover:bg-foreground/90" onClick={() => void copyLink()}><Copy /> نسخ الرابط</Button> },
+              { icon: Gift, title: "رشّح بصدق", text: "أفصح أنه رابط إحالة ولا تَعِد بنتائج مضمونة — الثقة تحوّل أكثر.", action: <Button asChild className="w-full rounded-xl bg-foreground font-black text-background hover:bg-foreground/90"><Link to="/referral-terms"><Scale /> قواعد الترويج</Link></Button> },
+              { icon: WalletCards, title: "استلم أرباحك", text: "بعد ٣٠ يوماً تصبح العمولة متاحة، واسحبها لحسابك البنكي أو PayPal.", action: <Button variant="outline" className="w-full rounded-xl font-black" disabled={dashboard.totals.available < 5000 || dashboard.totals.reserved > 0} onClick={() => setWithdrawOpen(true)}>طلب سحب</Button> },
+            ].map((c, i) => <motion.article key={c.title} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * .08 }} className="flex flex-col rounded-2xl border border-border bg-muted/40 p-5 text-center">
+              <div className="mx-auto grid size-16 place-items-center rounded-2xl border border-border bg-background"><c.icon className="size-6 text-gold-deep" /></div>
+              <h3 className="mt-4 font-display text-base font-black">{c.title}</h3>
+              <p className="mt-2 flex-1 text-xs leading-6 text-muted-foreground">{c.text}</p>
+              <div className="mt-4">{c.action}</div>
+            </motion.article>)}
           </div>
-        </div>
-        <div className="rounded-lg border border-border bg-secondary/35 p-5">
-          <div className="flex items-center gap-3"><WalletCards className="size-5 text-jade" /><h2 className="font-display text-lg font-black">الرصيد المتاح</h2></div>
-          <p className="mt-5 font-display text-4xl font-black">{money(dashboard.totals.available)}</p>
-          <div className="mt-4 grid grid-cols-2 gap-3 text-xs"><div><p className="text-muted-foreground">قيد الانتظار</p><p className="mt-1 font-black">{money(dashboard.totals.pending)}</p></div><div><p className="text-muted-foreground">تم دفعه</p><p className="mt-1 font-black">{money(dashboard.totals.paid)}</p></div></div>
-          <Button className="mt-6 w-full font-black" disabled={dashboard.totals.available < 5000 || dashboard.totals.reserved > 0} onClick={() => setWithdrawOpen(true)}>طلب سحب الأرباح <ArrowLeft /></Button>
-          <p className="mt-3 text-center text-[0.68rem] leading-5 text-muted-foreground">الحد الأدنى ٥٠ دولاراً. العمولات تصبح متاحة بعد فترة مراجعة ٣٠ يوماً.</p>
-        </div>
-      </section>
+        </TabsContent>
 
-      <section className="border-t border-border pt-6">
-        <div className="mb-4 flex items-center justify-between"><div><h2 className="font-display text-xl font-black">آخر الإحالات</h2><p className="mt-1 text-sm text-muted-foreground">لا نعرض بيانات شخصية لعملائك.</p></div><Gift className="size-5 text-primary" /></div>
-        {dashboard.referrals.length ? <Table><TableHeader><TableRow><TableHead className="text-right">الإحالة</TableHead><TableHead className="text-right">الحالة</TableHead><TableHead className="text-right">تاريخ التسجيل</TableHead><TableHead className="text-right">أول دفعة</TableHead></TableRow></TableHeader><TableBody>{dashboard.referrals.slice(0, 8).map((referral) => { const status = referralStatuses[referral.status] ?? { label: "سجّل", className: "bg-secondary text-secondary-foreground" }; return <TableRow key={referral.id}><TableCell className="font-bold">{referral.label}</TableCell><TableCell><span className={`inline-flex rounded-full px-2 py-1 text-[0.68rem] font-black ${status.className}`}>{status.label}</span></TableCell><TableCell className="text-muted-foreground">{new Date(referral.attributedAt).toLocaleDateString("ar")}</TableCell><TableCell className="text-muted-foreground">{referral.firstPaidAt ? new Date(referral.firstPaidAt).toLocaleDateString("ar") : "—"}</TableCell></TableRow>; })}</TableBody></Table> : <div className="grid min-h-40 place-items-center rounded-lg border border-dashed border-border bg-secondary/20 px-6 text-center"><div><Users className="mx-auto size-6 text-muted-foreground" /><p className="mt-3 text-sm font-black">أول إحالة تبدأ من مشاركة واحدة</p><p className="mt-1 text-xs text-muted-foreground">انسخ رابطك وأرسله لشخص تعرف أنه سيستفيد.</p></div></div>}
-      </section>
+        <TabsContent value="earnings" className="mt-5">
+          <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-3">
+            <div className="bg-card p-5"><p className="text-xs font-black text-muted-foreground">عمولتك الآن</p><p className="mt-2 font-display text-4xl font-black text-primary">{dashboard.rate.toLocaleString("ar")}٪</p><p className="mt-1 text-xs text-muted-foreground">مستوى {currentLevel.name}</p></div>
+            <div className="bg-card p-5"><p className="text-xs font-black text-muted-foreground">إجمالي ما كسبته</p><p className="mt-2 font-display text-4xl font-black">{money(dashboard.totals.earned)}</p><p className="mt-1 text-xs text-muted-foreground">من مدفوعات مؤكدة فقط</p></div>
+            <div className="bg-gold-soft p-5"><p className="text-xs font-black text-gold-deep">الجاهز للسحب</p><p className="mt-2 font-display text-4xl font-black text-gold-deep">{money(dashboard.totals.available)}</p><Button size="sm" className="mt-3 font-black" disabled={dashboard.totals.available < 5000 || dashboard.totals.reserved > 0} onClick={() => setWithdrawOpen(true)}>طلب سحب <ArrowLeft /></Button></div>
+          </div>
+        </TabsContent>
 
-      <section className="grid gap-4 border-t border-border pt-6 sm:grid-cols-3">
-        {[{ icon: DollarSign, title: "عمولة على المدفوع", text: "تُحتسب العمولة فقط بعد دفع العميل فعلياً، وليست على مجرد التسجيل." }, { icon: Clock3, title: "مراجعة ٣٠ يوماً", text: "تبقى العمولة معلّقة خلال فترة الاسترداد، ثم تنتقل إلى رصيدك المتاح." }, { icon: CheckCircle2, title: "أرقام قابلة للتدقيق", text: "الاسترداد أو إلغاء الدفع يعكس العمولة تلقائياً ويحفظ السبب في السجل." }].map((item) => <article key={item.title} className="border-r-2 border-border pr-4"><item.icon className="size-5 text-primary" /><h3 className="mt-3 text-sm font-black">{item.title}</h3><p className="mt-1 text-xs leading-6 text-muted-foreground">{item.text}</p></article>)}
-      </section>
-      <section className="flex flex-col items-start justify-between gap-4 rounded-lg border border-border bg-secondary/40 p-5 sm:flex-row sm:items-center"><div><h2 className="font-display text-lg font-black">أرباح واضحة، بلا مفاجآت</h2><p className="mt-1 text-xs leading-6 text-muted-foreground">راجع قواعد احتساب العمولة، الاسترداد، السحب والترويج المسموح قبل المشاركة.</p></div><Button asChild variant="outline" className="shrink-0 font-black"><Link to="/referral-terms"><Scale /> شروط برنامج الإحالة</Link></Button></section>
+        <TabsContent value="referrals" className="mt-5">
+          {dashboard.referrals.length ? <Table><TableHeader><TableRow><TableHead className="text-right">الإحالة</TableHead><TableHead className="text-right">الحالة</TableHead><TableHead className="text-right">تاريخ التسجيل</TableHead><TableHead className="text-right">أول دفعة</TableHead></TableRow></TableHeader><TableBody>{dashboard.referrals.slice(0, 20).map((referral) => { const status = referralStatuses[referral.status] ?? { label: "سجّل", className: "bg-secondary text-secondary-foreground" }; return <TableRow key={referral.id}><TableCell className="font-bold">{referral.label}</TableCell><TableCell><span className={`inline-flex rounded-full px-2 py-1 text-[0.68rem] font-black ${status.className}`}>{status.label}</span></TableCell><TableCell className="text-muted-foreground">{new Date(referral.attributedAt).toLocaleDateString("ar")}</TableCell><TableCell className="text-muted-foreground">{referral.firstPaidAt ? new Date(referral.firstPaidAt).toLocaleDateString("ar") : "—"}</TableCell></TableRow>; })}</TableBody></Table> : <div className="grid min-h-40 place-items-center rounded-2xl border border-dashed border-border bg-muted/30 px-6 text-center"><div><Users className="mx-auto size-6 text-muted-foreground" /><p className="mt-3 text-sm font-black">أول إحالة تبدأ من مشاركة واحدة</p><p className="mt-1 text-xs text-muted-foreground">لا نعرض بيانات شخصية لعملائك.</p></div></div>}
+        </TabsContent>
+
+        <TabsContent value="levels" className="mt-5">
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <div className="flex items-start justify-between gap-4"><div><h3 className="font-display text-lg font-black">طريقك إلى ٥٠٪</h3><p className="mt-1 text-sm text-muted-foreground">المستوى يعتمد على عدد العملاء النشطين.</p></div>{nextLevel ? <span className="shrink-0 text-xs font-black text-primary">باقي {(nextLevel.count - dashboard.active).toLocaleString("ar")}</span> : <span className="shrink-0 text-xs font-black text-jade">أعلى مستوى</span>}</div>
+            <Progress value={Math.max(0, Math.min(100, progress))} className="mt-6 h-2" />
+            <div className="mt-5 grid grid-cols-4 gap-2">{levels.map((level) => { const reached = dashboard.active >= level.count; return <div key={level.rate} className="text-center"><span className={`mx-auto grid size-8 place-items-center rounded-full border text-xs font-black ${reached ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground"}`}>{reached ? <Check className="size-4" /> : level.count.toLocaleString("ar")}</span><p className="mt-2 text-sm font-black">{level.rate.toLocaleString("ar")}٪</p><p className="text-[0.65rem] text-muted-foreground">{level.name}</p></div>; })}</div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="faq" className="mt-5">
+          <Accordion type="single" collapsible className="rounded-2xl border border-border bg-card px-5">
+            {faqs.map((f) => <AccordionItem key={f.q} value={f.q}><AccordionTrigger className="text-right font-black">{f.q}</AccordionTrigger><AccordionContent className="leading-7 text-muted-foreground">{f.a}</AccordionContent></AccordionItem>)}
+          </Accordion>
+        </TabsContent>
+      </Tabs>
     </div>}
 
     <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
