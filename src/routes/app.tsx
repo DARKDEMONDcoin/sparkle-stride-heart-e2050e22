@@ -36,7 +36,7 @@ export const Route = createFileRoute("/app")({
     if (data.user) await supabase.auth.signOut();
     throw redirect({ to: "/auth", search: { mode: "signin" } });
   },
-  head: () => ({ meta: [{ name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "مساحة عملك | زياد" }, { name: "robots", content: "noindex" }] }),
   pendingMs: 150,
   pendingComponent: () => <AppPending />,
   errorComponent: ({ error }) => (
