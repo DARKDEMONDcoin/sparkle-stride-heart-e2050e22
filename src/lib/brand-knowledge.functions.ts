@@ -16,6 +16,8 @@ export const saveBrandKnowledge = createServerFn({ method: "POST" })
   .inputValidator((value: unknown) => input.parse(value))
   .handler(async ({ data, context }) => {
     const supabase = context.supabase;
+    const { data: owned } = await supabase.from("workspaces").select("id").eq("id", data.workspaceId).eq("owner_id", context.userId).maybeSingle();
+    if (!owned) throw new Error("حفظ قواعد الفريق متاح لمالك مساحة العمل فقط.");
     let title = data.title?.trim() || "ملاحظة عن العلامة";
     let body = sanitizeBrandKnowledge(data.value, 16_000);
     let meta = "ملاحظة · أضيفت يدوياً";

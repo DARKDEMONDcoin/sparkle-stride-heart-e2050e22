@@ -29,9 +29,10 @@ export const extractBrandVoice = createServerFn({ method: "POST" })
       .from("workspaces")
       .select("id, name, industry")
       .eq("id", data.workspaceId)
+      .eq("owner_id", context.userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!workspace) throw new Error("مساحة العمل غير موجودة.");
+    if (!workspace) throw new Error("استخراج صوت العلامة متاح لمالك مساحة العمل فقط.");
 
     const { collectSiteText, analyzeStyle, synthesizeVoice, voiceRuleText } =
       await import("./brand-voice.server");
@@ -42,6 +43,8 @@ export const extractBrandVoice = createServerFn({ method: "POST" })
     let taglines: string[] = [];
 
     if (data.url) {
+      const { publicWebsiteUrl } = await import("./welcome-preview.server");
+      if (!publicWebsiteUrl(data.url)) throw new Error("أدخل رابط موقع عام صالح.");
       const site = await collectSiteText(data.url);
       urls = site.urls;
       headings = site.headings;
@@ -52,7 +55,7 @@ export const extractBrandVoice = createServerFn({ method: "POST" })
     }
 
     // آخر شبكة أمان: نستعين بما هو مخزون في عقل العلامة (ملف العلامة، الملاحظات، المستندات)
-    if (text.trim().split(/\s+/).filter(Boolean).length < 40) {
+    if (!data.samples && text.trim().split(/\s+/).filter(Boolean).length < 40) {
       const { data: items } = await supabase
         .from("brain_items")
         .select("title, body")
@@ -67,12 +70,13 @@ export const extractBrandVoice = createServerFn({ method: "POST" })
       text = [text, fromBrain].filter(Boolean).join("\n\n");
     }
 
-    if (text.trim().split(/\s+/).filter(Boolean).length < 40) {
+    if (text.trim().length < 80 || text.trim().split(/\s+/).filter(Boolean).length < 12) {
       throw new Error(
         "لم نجد نصًا كافيًا لموقعك (قد يعتمد على جافاسكريبت بالكامل) ولا في عقل العلامة — الصق ٣ منشورات أو فقرات من موقعك في خيار «من نصوص ألصقها».",
       );
     }
 
+    text = sanitizeBrandKnowledge(text, 30_000);
     const stats = analyzeStyle(text, taglines);
     const profile = await synthesizeVoice(
       { name: workspace.name, industry: workspace.industry },
@@ -88,8 +92,8 @@ export const extractBrandVoice = createServerFn({ method: "POST" })
           workspace_id: workspace.id,
           kind: "note",
           title: "دليل صوت العلامة",
-          meta: `قاعدة نبرة إلزامية · استُخرج ${urls.length ? `من ${urls.length} صفحات` : "من عينات نصية"} · ${stats.sampleWords} كلمة · ثقة اللهجة ${Math.round(stats.dialectConfidence * 100)}٪ · ${new Date().toLocaleDateString("ar-EG")}`,
-          body: rule,
+          meta: `دليل أسلوبي · استُخرج ${urls.length ? `من ${urls.length} صفحات` : "من عينات نصية"} · ${stats.sampleWords} كلمة · ثقة اللهجة ${Math.round(stats.dialectConfidence * 100)}٪ · ${new Date().toLocaleDateString("ar-EG")}`,
+          body: [rule, urls.length ? `مصادر الدليل: ${urls.join("، ")}` : "مصدر الدليل: النصوص التي قدمها المالك."].join("\n"),
           used_by: [...BRAND_EMPLOYEE_IDS],
       };
       const { data: existing, error: existingError } = await supabase

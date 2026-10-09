@@ -28,9 +28,9 @@ export type BusinessProfile = {
   contacts: string[];
   platform: string | null;
   competitors: string[];
-  competitorEvidence?: { domain: string; url: string; title: string; quote: string; reason: string }[];
-  analyzedAt?: string;
-  gaps?: string[];
+  competitorEvidence?: { domain: string; url: string; title: string; quote: string; reason: string }[] | undefined;
+  analyzedAt?: string | undefined;
+  gaps?: string[] | undefined;
   suggestedTone: string;
   /** اقتراحات أول مهمة لكل موظف — مبنية على ما فُهم من الموقع. */
   firstTasks: { employeeId: string; title: string; prompt: string }[];
