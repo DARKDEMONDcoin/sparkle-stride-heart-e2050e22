@@ -14,6 +14,13 @@ import appCss from "../styles.css?url";
 
 /** لون واجهة المتصفح الرسمي لزياد — المصدر الوحيد لهذا اللون في المشروع. */
 export const BROWSER_THEME = "#9B741E";
+/**
+ * أزرار التنقل السفلية الثلاثة في هواتف أندرويد: شفافة تماماً (بلا خلفية).
+ * كروم على أندرويد يدعم قناة الشفافية (ألفا) في theme-color، فيظهر محتوى
+ * الصفحة خلف الأزرار، ولون رموز الأزرار يختاره النظام تلقائياً لضمان أعلى
+ * تباين مع الخلفية الظاهرة (داكن على الصفحات الفاتحة والعكس).
+ */
+export const BROWSER_NAV_THEME = "#00000000";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { RegionProvider } from "@/hooks/use-region";
 import { Button } from "@/components/ui/button";
@@ -76,11 +83,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      // لون المتصفح موحّد على كل الأجهزة: نفس اللون في الوضع الفاتح والداكن،
-      // ومع color-scheme: light حتى لا يقلبه المتصفح تلقائياً.
-      // وسم واحد بلا media: المتصفحات تُدمج الوسوم المتشابهة، وبقاء وسم مقيّد بـ media
-      // كان يجعل اللون يختفي على بعض الأجهزة.
-      { name: "theme-color", content: BROWSER_THEME },
+      // شريط أزرار النظام السفلية في هواتف أندرويد: شفاف تماماً بلا خلفية،
+      // ومع color-scheme: light يختار النظام رموزاً داكنة لأعلى تباين مع
+      // الصفحات الفاتحة. وسم واحد بلا media: المتصفحات تُدمج الوسوم المتشابهة،
+      // وبقاء وسم مقيّد بـ media كان يجعل اللون يختفي على بعض الأجهزة.
+      { name: "theme-color", content: BROWSER_NAV_THEME },
       { name: "color-scheme", content: "light" },
       { name: "msapplication-TileColor", content: BROWSER_THEME },
       { name: "apple-mobile-web-app-capable", content: "yes" },
