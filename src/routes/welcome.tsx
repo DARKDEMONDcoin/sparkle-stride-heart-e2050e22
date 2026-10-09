@@ -7,6 +7,7 @@ import { team } from "@/data/team";
 import { Portrait } from "@/components/site/Portrait";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { readWelcomeDraft, writeWelcomeDraft } from "@/lib/welcome-draft";
 import { getWelcomePreview } from "@/lib/welcome-preview.functions";
 import type { WelcomePreview } from "@/lib/welcome-preview.server";
 import { getWelcomeRecommendation } from "@/lib/welcome-recommendation.functions";
@@ -14,7 +15,6 @@ import type { WelcomeRecommendation } from "@/lib/welcome-recommendation.server"
 import { welcomeIndustries } from "@/lib/welcome-industries";
 import { purposeCopy, purposeMembers, type WelcomePurpose } from "@/lib/welcome-purpose";
 
-const draftKey = "sahl-welcome-draft";
 export type WelcomeDraft = { purpose: string; website: string; industry: string; step?: number };
 const industries = welcomeIndustries;
 const scanStages = ["جاري الفحص", "قريبًا تظهر النتيجة"];
@@ -58,9 +58,9 @@ function Welcome() {
   const recommendationCache = useRef(new Map<string, WelcomeRecommendation>());
   useEffect(() => {
     try {
-      const saved = sessionStorage.getItem(draftKey);
+      const saved = readWelcomeDraft();
       if (saved) {
-        const draft = JSON.parse(saved) as Partial<WelcomeDraft>;
+        const draft = saved as Partial<WelcomeDraft>;
         setPurpose(typeof draft.purpose === "string" ? draft.purpose : "");
         setWebsite(typeof draft.website === "string" ? draft.website : "");
         setIndustry(typeof draft.industry === "string" ? draft.industry : "");
@@ -72,8 +72,8 @@ function Welcome() {
   }, []);
   useEffect(() => {
     if (!ready) return;
-    try { sessionStorage.setItem(draftKey, JSON.stringify({ purpose, website, industry, step } satisfies WelcomeDraft)); } catch { /* Storage is optional. */ }
-  }, [ready, purpose, website, industry, step]);
+    writeWelcomeDraft({ purpose, website, industry, step, plan: recommendation ? { insight: recommendation.insight, actions: recommendation.actions.slice(0, 3), firstMove: recommendation.firstMove } : null });
+  }, [ready, purpose, website, industry, step, recommendation]);
   useEffect(() => { setExample(false); }, [step]);
   const next = () => setStep((current) => Math.min(current + 1, lastStep));
   const back = () => setStep((current) => Math.max(current - 1, 0));

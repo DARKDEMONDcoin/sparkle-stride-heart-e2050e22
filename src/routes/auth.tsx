@@ -1,3 +1,4 @@
+import { bindWelcomeUser, hasWelcomeAnswers, readWelcomeDraft } from "@/lib/welcome-draft";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -177,12 +178,9 @@ function AuthPage() {
       }
       if (search.oauth === "signup") {
         try {
-          const saved = JSON.parse(sessionStorage.getItem("sahl-welcome-draft") ?? "null") as { website?: unknown } | null;
           const age = Date.now() - Date.parse(user.created_at);
           // Do not import another account's browser draft into an existing account.
-          if (typeof saved?.website === "string" && saved.website.trim() && age >= 0 && age < 5 * 60 * 1000) {
-            sessionStorage.setItem("sahl-welcome-profile-user", user.id);
-          }
+          if (hasWelcomeAnswers(readWelcomeDraft()) && age >= 0 && age < 5 * 60 * 1000) bindWelcomeUser(user.id);
         } catch { /* The introduction must not block authentication. */ }
       }
       void navigate(search.invite ? { to: "/invite", search: { token: search.invite }, replace: true } : { to: "/app", replace: true });
@@ -254,10 +252,9 @@ function AuthPage() {
         }
         await signIn(email.trim(), password);
         try {
-          const saved = JSON.parse(sessionStorage.getItem("sahl-welcome-draft") ?? "null") as { website?: unknown } | null;
-          if (typeof saved?.website === "string" && saved.website.trim()) {
+          if (hasWelcomeAnswers(readWelcomeDraft())) {
             const { data } = await supabase.auth.getUser();
-            if (data.user) sessionStorage.setItem("sahl-welcome-profile-user", data.user.id);
+            if (data.user) bindWelcomeUser(data.user.id);
           }
         } catch { /* The optional introduction must not block sign-up. */ }
         await navigate(search.invite ? { to: "/invite", search: { token: search.invite }, replace: true } : { to: "/app", replace: true });
