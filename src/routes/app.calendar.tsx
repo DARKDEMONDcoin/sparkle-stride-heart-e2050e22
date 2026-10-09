@@ -1715,22 +1715,26 @@ function SheetOnSmall({ children, onClose }: { children: ReactNode; onClose: () 
 function EmployeeLensBar({ employee, lens, count }: { employee: EmployeeLens; lens: (typeof LENSES)[EmployeeLens]; count: number }) {
   const m = getMember(employee);
   return (
-    <section className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-3 shadow-card sm:p-4">
-      <span className="size-11 shrink-0 overflow-hidden rounded-2xl">
-        {m ? <Portrait memberId={employee} name={m.name} className="size-full" /> : null}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-black">{lens.title}</p>
-        <p className="text-xs text-muted-foreground">
-          {count ? `${count} عنصر هذا الشهر من ${m?.name ?? "الموظف"}` : lens.empty}
-        </p>
+    <section className="mb-4 rounded-2xl border border-border bg-card p-3 shadow-card sm:p-4">
+      <div className="flex items-center gap-3">
+        <span className="size-11 shrink-0 overflow-hidden rounded-2xl">
+          {m ? <Portrait memberId={employee} name={m.name} className="size-full" /> : null}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-black">{lens.title}</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            {count ? `${count} عنصر هذا الشهر من ${m?.name ?? "الموظف"}` : lens.empty}
+          </p>
+        </div>
       </div>
-      <Link to="/app/chat/$id" params={{ id: employee }} className="rounded-xl border border-border px-3 py-2 text-xs font-bold hover:bg-secondary">
-        اطلب من {m?.name ?? "الموظف"}
-      </Link>
-      <Link to="/app/calendar" className="rounded-xl px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-secondary">
-        تقويم الفريق كله
-      </Link>
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+        <Link to="/app/chat/$id" params={{ id: employee }} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-border px-3 py-2 text-center text-xs font-bold hover:bg-secondary">
+          اطلب من {m?.name ?? "الموظف"}
+        </Link>
+        <Link to="/app/calendar" className="inline-flex min-h-10 items-center justify-center rounded-xl px-3 py-2 text-center text-xs font-bold text-muted-foreground hover:bg-secondary">
+          تقويم الفريق كله
+        </Link>
+      </div>
     </section>
   );
 }
