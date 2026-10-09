@@ -19,7 +19,7 @@ export type WelcomeDraft = { purpose: string; website: string; industry: string;
 const industries = welcomeIndustries;
 const scanStages = ["جاري الفحص", "قريبًا تظهر النتيجة"];
 type FindingTab = "offer" | "brand" | "team" | "reach";
-const lastStep = 10;
+const lastStep = 5;
 
 export const Route = createFileRoute("/welcome")({
   ssr: false,
@@ -77,14 +77,15 @@ function Welcome() {
   useEffect(() => { setExample(false); }, [step]);
   const next = () => setStep((current) => Math.min(current + 1, lastStep));
   const back = () => setStep((current) => Math.max(current - 1, 0));
-  const member = step >= 2 && step <= 7 ? team[step - 2] : undefined;
-  const description = member ? purposeMembers[chosenPurpose][member.id] : undefined;
+  const [exampleId, setExampleId] = useState<string | null>(null);
+  const exampleMember = exampleId ? team.find((m) => m.id === exampleId) : undefined;
+  const exampleCopy = exampleMember ? purposeMembers[chosenPurpose][exampleMember.id] : undefined;
   const customIndustry = otherSelected;
   const industryValid = industry !== "أخرى" && z.string().trim().min(2).max(60).regex(/^[\p{L}\p{N}\s\-،&/().]+$/u).safeParse(industry).success;
-  const canContinue = step === 0 ? Boolean(purpose) : step === 8 ? industryValid : true;
+  const canContinue = step === 0 ? Boolean(purpose) : step === 3 ? industryValid : true;
   const showPreview = preview && preview.url === website.trim();
   useEffect(() => {
-    if (step !== 9 || !industryValid || !ready) return;
+    if (step !== 4 || !industryValid || !ready) return;
     let cancelled = false;
     setRecommendation(null);
     setRecommendationState("loading");
@@ -96,7 +97,7 @@ function Welcome() {
     const cacheKey = JSON.stringify(input);
     const cached = recommendationCache.current.get(cacheKey);
     if (cached) { setRecommendation(cached); setRecommendationState("ready"); return; }
-    recommend({ data: input }).then((result) => {
+    Promise.race([recommend({ data: input }), new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("timeout")), 6000))]).then((result) => {
       recommendationCache.current.set(cacheKey, result);
       if (!cancelled) { setRecommendation(result); setRecommendationState("ready"); }
     }).catch(async () => {
@@ -107,16 +108,19 @@ function Welcome() {
   }, [step, industry, chosenPurpose, preview, website, ready]);
 
   async function scan() {
-    if (!website.trim() || loading) return;
+    if (!website.trim() || loading) return false;
     setError(""); setLoading(true); setPreview(null); setFindingTab("offer"); setScanStage(0);
     const timer = window.setInterval(() => setScanStage((s) => Math.min(s + 1, scanStages.length - 1)), 2800);
+    let ok = false;
     try {
       const result = await inspect({ data: { url: website.trim() } });
+      ok = true;
       setPreview(result);
       setWebsite(result.url);
       if (result.industry && welcomeIndustries.includes(result.industry) && result.industry !== "أخرى") { setIndustry(result.industry); setOtherSelected(false); }
     } catch (e) { setError(e instanceof Error ? e.message : "تعذّر فحص الموقع الآن. يمكنك المتابعة دون فحص."); }
     finally { window.clearInterval(timer); setLoading(false); }
+    return ok;
   }
 
   return <div className="welcome-stage" dir="rtl">
@@ -126,7 +130,7 @@ function Welcome() {
       <Link to="/auth" search={{ mode: "signin" }} className="text-xs font-bold text-foreground underline decoration-primary/50 underline-offset-4">لديك حساب؟ ادخل</Link>
     </header>
     <main className="welcome-main">
-      <div className="welcome-progress"><div className="flex justify-between text-xs font-bold text-muted-foreground"><span>{step < 2 ? "اكتشف نشاطك" : step < 8 ? "تعرّف على فريقك" : "لنبدأ معًا"}</span><span dir="ltr">{String(step + 1).padStart(2, "0")} / 11</span></div><div className="welcome-progress-track" role="progressbar" aria-label="تقدم الجولة" aria-valuemin={0} aria-valuemax={11} aria-valuenow={step + 1}><span style={{ width: `${((step + 1) / 11) * 100}%` }} /></div></div>
+      <div className="welcome-progress"><div className="flex justify-between text-xs font-bold text-muted-foreground"><span>{step < 2 ? "اكتشف نشاطك" : step < 3 ? "تعرّف على فريقك" : "لنبدأ معًا"}</span><span dir="ltr">{step + 1} / 6</span></div><div className="welcome-progress-track" role="progressbar" aria-label="تقدم الجولة" aria-valuemin={0} aria-valuemax={6} aria-valuenow={step + 1}><span style={{ width: `${((step + 1) / 6) * 100}%` }} /></div></div>
       <div key={step} className="welcome-appear welcome-content">
         {step === 0 && <section className="welcome-centered">
           <span className="welcome-eyebrow"><Sparkles className="size-4" /> البداية</span>
@@ -138,19 +142,19 @@ function Welcome() {
            <span className="welcome-eyebrow"><Globe2 className="size-4" /> {chosenPurpose === "personal" ? "فكرتك" : "بدايتك"}</span>
            <h1 className="welcome-title">{copy.website}</h1>
            <p className="welcome-lead">{copy.websiteLead}</p>
-          <form className="welcome-url-form" onSubmit={(e) => { e.preventDefault(); void scan(); }}><label className="sr-only" htmlFor="welcome-url">رابط موقعك</label><input id="welcome-url" className="welcome-input" dir="ltr" type="text" inputMode="url" value={website} onChange={(e) => { setWebsite(e.target.value); setError(""); setPreview(null); }} placeholder="yourbusiness.com" autoComplete="url" /><Button type="submit" disabled={!website.trim() || loading} className="welcome-scan-btn">{loading ? <Loader2 className="animate-spin" /> : <Search />}<span>{loading ? "نفحص…" : "اكتشف"}</span></Button></form>
+          <label className="welcome-custom-label" htmlFor="welcome-url">رابط موقعك <span className="text-xs font-normal text-muted-foreground">اختياري</span></label><form className="welcome-url-form" onSubmit={(e) => { e.preventDefault(); if (!website.trim()) { next(); return; } void scan().then((ok) => { if (ok) next(); }); }}><input id="welcome-url" className="welcome-input" dir="ltr" type="text" inputMode="url" value={website} onChange={(e) => { setWebsite(e.target.value); setError(""); setPreview(null); }} placeholder="yourbusiness.com" autoComplete="url" /></form>
            {loading && <div className="welcome-scan-progress" role="status" aria-live="polite"><Loader2 className="size-4 animate-spin" /> {scanStages[scanStage]}</div>}
           {error && <p className="welcome-error" role="alert">{error}</p>}
           {showPreview && <SiteCard preview={preview} tab={findingTab} onTab={setFindingTab} />}
           <p className="welcome-disclaimer">هذه قراءة أولية لما يظهر علنًا، وقد تغيب معلومات عن صفحات محمية أو غير متاحة. الفحص الأعمق بعد التسجيل.</p>
-           <Button type="button" variant="ghost" className="welcome-skip" onClick={() => { setWebsite(""); setPreview(null); next(); }}>{copy.websiteSkip} <ChevronLeft /></Button>
         </section>}
-         {member && description && <section className="welcome-person"><div className="welcome-person-copy"><span className="welcome-eyebrow">فريقك · {step - 1} / ٦</span><p className="welcome-role">{member.role}</p><h1 className="welcome-title">{member.name}، إلى جانبك.</h1><p className="welcome-person-lead">{description.headline}</p><ul className="welcome-tasks">{description.tasks.map((task) => <li key={task}><Check className="size-4 shrink-0 text-jade" /><span>{task}</span></li>)}</ul><Button type="button" variant="outline" className="welcome-example-toggle" onClick={() => setExample(!example)} aria-expanded={example}>{example ? "إخفاء المثال" : "شاهد مثالًا"} {example ? <X /> : <ArrowLeft />}</Button>{example && <div className="welcome-sample" role="region" aria-label={`مثال من ${member.name}`}><span className="text-xs font-bold text-primary">مثال عملي</span><p>{description.example}</p></div>}</div><div className="welcome-portrait"><Portrait memberId={member.id} name={member.name} eager className="h-full w-full" /></div></section>}
-          {step === 8 && <section className="welcome-centered"><span className="welcome-eyebrow"><Search className="size-4" /> {chosenPurpose === "personal" ? "اهتمامك" : "مجالك"}</span><h1 className="welcome-title">{copy.industry}</h1><p className="welcome-lead">{copy.industryLead}</p><div className="welcome-industries">{industries.map((item) => <Button key={item} type="button" variant="outline" aria-pressed={item === "أخرى" ? customIndustry : !customIndustry && industry === item} onClick={() => { if (item === "أخرى") { setOtherSelected(true); setIndustry("أخرى"); } else { setOtherSelected(false); setIndustry(item); next(); } }} className={cn("welcome-industry", (item === "أخرى" ? customIndustry : !customIndustry && industry === item) && "welcome-industry-active")}>{item}{(item === "أخرى" ? customIndustry : !customIndustry && industry === item) && <Check className="size-4 shrink-0" />}</Button>)}</div>{customIndustry && <label className="welcome-custom-label" htmlFor="welcome-custom-industry">{chosenPurpose === "personal" ? "ما اهتمامك تحديدًا؟" : "ما مجالك تحديدًا؟"}<input id="welcome-custom-industry" className="welcome-input" autoFocus value={industry === "أخرى" ? "" : industry} onChange={(e) => setIndustry(e.target.value.slice(0, 60) || "أخرى")} maxLength={60} placeholder="مثال: استشارات هندسية" />{industry !== "أخرى" && industry.trim() && !industryValid && <span className="welcome-error">اكتب مجالًا من حرفين إلى ٦٠ حرفًا، دون رموز خاصة.</span>}</label>}</section>}
-          {step === 9 && <section className="welcome-centered welcome-recommendation"><span className="welcome-eyebrow"><Sparkles className="size-4" /> {chosenPurpose === "personal" ? "خطوة لاستكشاف فكرتك" : "بداية تناسبك"}</span><h1 className="welcome-title">{copy.recommendation} {industry}.</h1>{recommendationState === "loading" ? <div className="welcome-recommend-loading" role="status"><Loader2 className="size-6 animate-spin text-primary" /><p>نجهز لك خطوة أولى مناسبة…</p></div> : recommendation && <><p className="welcome-lead">{recommendation.insight}</p><div className="welcome-recommend-actions">{recommendation.actions.map((item, i) => <div key={`${item.employee}-${i}`}><span className="welcome-recommend-number">{String(i + 1).padStart(2, "0")}</span><strong>{item.employee}</strong><p>{item.text}</p></div>)}</div><p className="welcome-first-move"><Sparkles className="size-4 shrink-0" />{recommendation.firstMove}</p><p className="welcome-disclaimer">{recommendationState === "fallback" ? "هذه نقطة بداية مقترحة؛ يمكنك تعديلها مع الفريق بعد التسجيل. " : ""}لا نشر أو إرسال دون موافقتك.</p></>}</section>}
-         {step === 10 && <section className="welcome-centered"><span className="welcome-eyebrow"><Check className="size-4" /> البداية الحقيقية</span><h1 className="welcome-title">{copy.finish}</h1><p className="welcome-lead">{copy.finishLead}</p><div className="welcome-team">{team.map((person) => <div key={person.id}><Portrait memberId={person.id} name={person.name} className="size-9 rounded-full" /><span>{person.name}</span></div>)}</div><Button asChild className="welcome-signup"><Link to="/auth" search={{ mode: "signup", plan }}>أنشئ حسابك وقابل فريقك <ArrowLeft /></Link></Button><p className="welcome-trust"><ShieldCheck className="size-4" /> لن يُنشر أو يُرسل شيء دون موافقتك</p></section>}
+         {step === 2 && <section className="welcome-centered"><span className="welcome-eyebrow">فريقك</span><h1 className="welcome-title">ستة موظفين إلى جانبك.</h1><div className="mt-4 grid w-full grid-cols-2 gap-3 sm:grid-cols-3">{team.map((m) => <div key={m.id} className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-3 text-center"><Portrait memberId={m.id} name={m.name} className="size-16 rounded-2xl" /><strong className="text-sm">{m.name}</strong><span className="text-xs text-muted-foreground">{m.role}</span><p className="line-clamp-2 text-xs leading-relaxed">{purposeMembers[chosenPurpose][m.id]?.headline}</p><Button type="button" variant="outline" size="sm" onClick={() => setExampleId(m.id)}>شاهد مثالًا</Button></div>)}</div></section>}
+          {step === 3 && <section className="welcome-centered"><span className="welcome-eyebrow"><Search className="size-4" /> {chosenPurpose === "personal" ? "اهتمامك" : "مجالك"}</span><h1 className="welcome-title">{copy.industry}</h1><p className="welcome-lead">{copy.industryLead}</p><div className="welcome-industries">{industries.map((item) => <Button key={item} type="button" variant="outline" aria-pressed={item === "أخرى" ? customIndustry : !customIndustry && industry === item} onClick={() => { if (item === "أخرى") { setOtherSelected(true); setIndustry("أخرى"); } else { setOtherSelected(false); setIndustry(item); next(); } }} className={cn("welcome-industry", (item === "أخرى" ? customIndustry : !customIndustry && industry === item) && "welcome-industry-active")}>{item}{(item === "أخرى" ? customIndustry : !customIndustry && industry === item) && <Check className="size-4 shrink-0" />}</Button>)}</div>{customIndustry && <label className="welcome-custom-label" htmlFor="welcome-custom-industry">{chosenPurpose === "personal" ? "ما اهتمامك تحديدًا؟" : "ما مجالك تحديدًا؟"}<input id="welcome-custom-industry" className="welcome-input" autoFocus value={industry === "أخرى" ? "" : industry} onChange={(e) => setIndustry(e.target.value.slice(0, 60) || "أخرى")} maxLength={60} placeholder="مثال: استشارات هندسية" />{industry !== "أخرى" && industry.trim() && !industryValid && <span className="welcome-error">اكتب مجالًا من حرفين إلى ٦٠ حرفًا، دون رموز خاصة.</span>}</label>}</section>}
+          {step === 4 && <section className="welcome-centered welcome-recommendation"><span className="welcome-eyebrow"><Sparkles className="size-4" /> {chosenPurpose === "personal" ? "خطوة لاستكشاف فكرتك" : "بداية تناسبك"}</span><h1 className="welcome-title">{copy.recommendation} {industry}.</h1>{recommendationState === "loading" ? <div className="welcome-recommend-loading" role="status"><Loader2 className="size-6 animate-spin text-primary" /><p>نجهز خطة بدايتك حسب مجالك… ثوانٍ قليلة</p></div> : recommendation && <><p className="welcome-lead">{recommendation.insight}</p><div className="welcome-recommend-actions">{recommendation.actions.map((item, i) => <div key={`${item.employee}-${i}`}><span className="welcome-recommend-number">{String(i + 1).padStart(2, "0")}</span><strong>{item.employee}</strong><p>{item.text}</p></div>)}</div><p className="welcome-first-move"><Sparkles className="size-4 shrink-0" />{recommendation.firstMove}</p><p className="welcome-disclaimer">{recommendationState === "fallback" ? "هذه نقطة بداية مقترحة؛ يمكنك تعديلها مع الفريق بعد التسجيل. " : ""}لا نشر أو إرسال دون موافقتك.</p></>}</section>}
+         {step === 5 && <section className="welcome-centered"><span className="welcome-eyebrow"><Check className="size-4" /> البداية الحقيقية</span><h1 className="welcome-title">{copy.finish}</h1><p className="welcome-lead">{copy.finishLead}</p><div className="welcome-team">{team.map((person) => <div key={person.id}><Portrait memberId={person.id} name={person.name} className="size-9 rounded-full" /><span>{person.name}</span></div>)}</div><Button asChild className="welcome-signup"><Link to="/auth" search={{ mode: "signup", plan }}>أنشئ حسابك وقابل فريقك <ArrowLeft /></Link></Button><p className="welcome-trust"><ShieldCheck className="size-4" /> لن يُنشر أو يُرسل شيء دون موافقتك</p></section>}
       </div>
-       <footer className="welcome-footer"><Button type="button" variant="ghost" disabled={step === 0} onClick={back} className="welcome-back"><ArrowRight /> السابق</Button><span className="welcome-footer-dots" aria-hidden="true">{Array.from({ length: 11 }, (_, i) => <span key={i} className={i === step ? "is-active" : ""} />)}</span>{step < lastStep ? <Button type="button" disabled={!canContinue || loading || (step === 9 && recommendationState === "loading")} onClick={next} className="welcome-next">متابعة <ArrowLeft /></Button> : <span className="welcome-footer-spacer" />}</footer>
+       {exampleMember && exampleCopy && <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 p-4" role="dialog" aria-modal="true" aria-label={`مثال من ${exampleMember.name}`} onClick={() => setExampleId(null)}><div className="w-full max-w-md rounded-3xl border border-border bg-card p-5 shadow-xl" onClick={(e) => e.stopPropagation()}><div className="flex items-center gap-3"><Portrait memberId={exampleMember.id} name={exampleMember.name} className="size-11 rounded-xl" /><div className="min-w-0 flex-1"><strong className="block">{exampleMember.name}</strong><span className="text-xs text-muted-foreground">{exampleMember.role}</span></div><Button type="button" variant="ghost" size="icon" aria-label="إغلاق" onClick={() => setExampleId(null)}><X /></Button></div><span className="mt-4 block text-xs font-bold text-primary">مثال عملي</span><p className="mt-1 whitespace-pre-line text-sm leading-relaxed">{exampleCopy.example}</p><ul className="mt-3 space-y-1.5">{exampleCopy.tasks.map((t) => <li key={t} className="flex gap-2 text-xs"><Check className="size-4 shrink-0 text-jade" />{t}</li>)}</ul></div></div>}
+       <footer className="welcome-footer"><Button type="button" variant="ghost" disabled={step === 0} onClick={back} className="welcome-back"><ArrowRight /> السابق</Button><span className="welcome-footer-dots" aria-hidden="true">{Array.from({ length: 6 }, (_, i) => <span key={i} className={i === step ? "is-active" : ""} />)}</span>{step < lastStep ? <Button type="button" disabled={!canContinue || loading || (step === 4 && recommendationState === "loading")} onClick={() => { if (step === 1 && website.trim() && !showPreview && !error) { void scan().then((ok) => { if (ok) next(); }); return; } next(); }} className="welcome-next">متابعة <ArrowLeft /></Button> : <span className="welcome-footer-spacer" />}</footer>
     </main>
   </div>;
 }
