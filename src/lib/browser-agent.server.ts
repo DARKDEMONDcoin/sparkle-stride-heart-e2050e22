@@ -9,6 +9,7 @@
  */
 import { getSecrets } from "./secrets.server";
 import { browsePage } from "./cloud-browser.server";
+import { createBrowserSession } from "./browser-session.server";
 
 const BB = "https://api.browserbase.com/v1";
 
@@ -202,13 +203,7 @@ export async function runBrowserAgent(input: {
   if (sessionId) {
     connectUrl = `wss://connect.browserbase.com?apiKey=${encodeURIComponent(apiKey)}&sessionId=${encodeURIComponent(sessionId)}`;
   } else {
-    const created = await fetch(`${BB}/sessions`, {
-      method: "POST",
-      headers: { "X-BB-API-Key": apiKey, "Content-Type": "application/json" },
-      body: JSON.stringify({ projectId, timeout: 900, keepAlive: true }),
-    });
-    if (!created.ok) throw new Error("تعذّر فتح المتصفح السحابي الآن.");
-    const s = (await created.json()) as { id: string; connectUrl: string };
+    const s = await createBrowserSession(apiKey, { projectId, timeout: 900, keepAlive: true });
     sessionId = s.id;
     connectUrl = s.connectUrl;
   }

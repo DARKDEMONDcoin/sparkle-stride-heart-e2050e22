@@ -123,9 +123,9 @@ const visibleTextLength = (html: string) => html.replace(/<(script|style|noscrip
 
 /** Last resort: a real cloud Chrome session (Browserbase) that runs scripts and passes most bot checks. */
 async function browserPage(url: URL) {
-  const { browsePage } = await import("./cloud-browser.server");
+  const { browsePage, browseFailureReason } = await import("./cloud-browser.server");
   const page = await browsePage(url.toString(), { html: true });
-  if (!page?.html) throw new Error("لم نتمكن من قراءة صفحات هذا الموقع.");
+  if (!page?.html) throw new Error(browseFailureReason(url.toString()) ?? "لم نتمكن من قراءة صفحات هذا الموقع.");
   const final = publicWebsiteUrl(page.url) ?? url;
   return { html: page.html, url: final.toString(), via: "browser" as const };
 }
@@ -140,7 +140,10 @@ async function readPage(url: URL, root: string | null, deep = false): Promise<{ 
   if (rendered && !blocked(rendered.html) && (!direct || blocked(direct.html) || visibleTextLength(rendered.html) > visibleTextLength(direct.html))) return rendered;
   if (direct && !blocked(direct.html) && visibleTextLength(direct.html) >= 150) return direct;
   if (deep) {
-    const browsed = await browserPage(target).catch(() => null);
+    const browsed = await browserPage(target).catch((error: unknown) => {
+      if (direct && !blocked(direct.html)) return null;
+      throw error;
+    });
     if (browsed && !blocked(browsed.html) && visibleTextLength(browsed.html) >= 150) return browsed;
   }
   if (direct && !blocked(direct.html)) return direct;
@@ -180,7 +183,7 @@ export async function readBusinessPage(raw: string) {
   const url = publicWebsiteUrl(raw);
   if (!url) throw new Error("أدخل رابط موقع عام صالح، مثل example.com");
   try { return await readPage(url, null, true); }
-  catch { throw new Error("لم نتمكن من قراءة الموقع بعد تجربة القراءة المباشرة والمتصفح. قد يتطلب تحققًا؛ ارفع ملف الشركة أو أدخل معلوماتها يدويًا."); }
+  catch (error) { throw error instanceof Error ? error : new Error("لم نتمكن من قراءة الموقع بعد تجربة القراءة المباشرة والمتصفح."); }
 }
 
 export async function previewWebsite(raw: string): Promise<WelcomePreview> {

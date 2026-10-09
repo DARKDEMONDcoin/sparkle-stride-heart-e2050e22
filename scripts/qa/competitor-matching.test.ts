@@ -46,3 +46,30 @@ test("research searches again and inspects actual vendor pages", async () => {
   expect(reads).toContain(page.url);
   expect(result.map((p) => p.domain)).toEqual([page.domain]);
 });
+
+test("brief service failure is preserved and stops research immediately", async () => {
+  let searches = 0; let calls = 0;
+  await expect(researchCompetitors({ url: "https://own.example/", brand: "Own", text: brand, category: "dental booking" }, {
+    safeUrl: (url) => new URL(url),
+    search: async () => { searches++; return []; },
+    read: async (url) => ({ url, html: "" }),
+    json: async () => { calls++; throw new Error("403: analysis configuration rejected"); },
+  })).rejects.toThrow("403: analysis configuration rejected");
+  expect(calls).toBe(1);
+  expect(searches).toBe(0);
+});
+
+test("assessment failure stops before another analysis round and keeps its reason", async () => {
+  let calls = 0;
+  await expect(researchCompetitors({ url: "https://own.example/", brand: "Own", text: brand, category: "dental booking" }, {
+    safeUrl: (url) => new URL(url),
+    search: async () => [{ rank: 1, url: page.url, title: page.title, snippet: page.text }],
+    read: async (url) => ({ url, html: `<html><body>${page.text} ${page.text}</body></html>` }),
+    json: async () => {
+      calls++;
+      if (calls === 1) return JSON.stringify({ quote: brand.slice(0, 55), offer: "dental booking", audience: "clinics", model: "software", market: "", scope: "unknown", queries: [] });
+      throw new Error("402: owner action required");
+    },
+  })).rejects.toThrow("402: owner action required");
+  expect(calls).toBe(2);
+});
