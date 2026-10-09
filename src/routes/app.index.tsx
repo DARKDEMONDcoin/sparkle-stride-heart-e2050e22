@@ -29,6 +29,9 @@ import { BrandLoader } from "@/components/site/BrandLoader";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { splitReview } from "@/lib/task-freshness";
+import { useQueryClient } from "@tanstack/react-query";
+import { boundWelcomeUser, clearWelcomeBinding, employeeIdFromName, readWelcomeDraft, type StarterAction, type WelcomeDraftData } from "@/lib/welcome-draft";
+import { fallbackRecommendation } from "@/lib/welcome-recommendation-fallback";
 
 export const Route = createFileRoute("/app/")({
   head: () => ({
@@ -201,7 +204,7 @@ function FirstRun({ workspace }: { workspace: { id: string; industry?: string; w
             profile={(workspace as { profile?: Record<string, unknown> }).profile as never}
             welcomeWebsite={welcomeWebsite}
             onWelcomeSaved={() => {
-              sessionStorage.removeItem("sahl-welcome-profile-user");
+              clearWelcomeBinding();
               setWelcomeWebsite("");
             }}
           />
@@ -258,7 +261,7 @@ function AppHome() {
           <BrandLoader size="sm" />
         </div>
       ) : !started ? (
-        <FirstRun workspace={workspace ?? null} />
+        <FirstRun workspace={(workspace as never) ?? null} />
       ) : (
         <div className="app-command-center space-y-4">
           <CatchUpNote tasks={list as never} />

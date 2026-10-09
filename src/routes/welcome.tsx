@@ -15,7 +15,6 @@ import type { WelcomeRecommendation } from "@/lib/welcome-recommendation.server"
 import { welcomeIndustries } from "@/lib/welcome-industries";
 import { purposeCopy, purposeMembers, type WelcomePurpose } from "@/lib/welcome-purpose";
 
-const draftKey = "sahl-welcome-draft";
 export type WelcomeDraft = { purpose: string; website: string; industry: string; step?: number };
 const industries = welcomeIndustries;
 const scanStages = ["جاري الفحص", "قريبًا تظهر النتيجة"];
