@@ -381,7 +381,7 @@ function AppHome() {
     : "فريقك جاهز — ابدأ بطلب واحد.";
 
   return (
-    <AppShell title={`أهلاً ${profile?.full_name ?? ""}`} lead={workspace?.name && workspace.kind !== "personal" ? `${workspace.name} · ${lead}` : lead}>
+    <AppShell title={`أهلاً ${profile?.full_name ?? ""}`} lead={workspace?.name ? `${workspace.name} · ${lead}` : lead}>
       {broken.length ? (
         <div className="app-system-alert">
           <span className="app-system-alert-label">تنبيه</span>
