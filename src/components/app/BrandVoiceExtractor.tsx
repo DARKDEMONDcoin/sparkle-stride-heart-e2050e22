@@ -8,6 +8,7 @@ import { extractBrandVoice } from "@/lib/brand-voice.functions";
 import type { BrandVoiceResult } from "@/lib/brand-voice.server";
 import { cn } from "@/lib/utils";
 import { useBrainItems, useToggleBrainItem } from "@/lib/data";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
 const GUIDE_TITLE = "دليل صوت العلامة";
@@ -42,7 +43,7 @@ export function BrandVoiceExtractor({
     mutationFn: async () => {
       if (!workspaceId) throw new Error("مساحة العمل غير جاهزة بعد.");
       return run({
-        data: { workspaceId, url: mode === "url" ? url : undefined, samples: samples || undefined, save: true },
+        data: { workspaceId, url: mode === "url" ? url : undefined, samples: mode === "samples" ? samples : undefined, save: true },
       });
     },
     onSuccess: (res) => {
@@ -109,21 +110,21 @@ export function BrandVoiceExtractor({
             </p>
           ) : null}
           <div className="mt-3 flex flex-wrap gap-2">
-            <button
+            <Button variant="ghost"
               type="button"
               onClick={() => setShowGuide((v) => !v)}
               className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-bold hover:bg-secondary"
             >
               <ChevronDown className={cn("size-3.5 transition-transform", showGuide && "rotate-180")} />
               {showGuide ? "إخفاء الدليل" : "عرض الدليل"}
-            </button>
-            <button
+            </Button>
+            <Button variant="ghost"
               type="button"
               onClick={() => setFormOpen(true)}
               className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-bold hover:bg-secondary"
             >
               <RefreshCw className="size-3.5" /> أعد الاستخراج
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}
@@ -138,7 +139,7 @@ export function BrandVoiceExtractor({
         >
           <div className="flex gap-1 rounded-full bg-secondary p-1 text-sm font-bold">
             {(["url", "samples"] as const).map((m) => (
-              <button
+              <Button variant="ghost"
                 key={m}
                 type="button"
                 onClick={() => setMode(m)}
@@ -148,7 +149,7 @@ export function BrandVoiceExtractor({
                 )}
               >
                 {m === "url" ? "من موقعي" : "من نصوص ألصقها"}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -177,7 +178,7 @@ export function BrandVoiceExtractor({
           )}
 
           <div className="flex flex-wrap items-center gap-2">
-            <button
+            <Button variant="ghost"
               type="submit"
               disabled={extract.isPending || !workspaceId}
               className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-bold text-background disabled:opacity-60"
@@ -191,15 +192,15 @@ export function BrandVoiceExtractor({
                   <Sparkles className="size-4" /> استخرج صوت العلامة
                 </>
               )}
-            </button>
+            </Button>
             {guide ? (
-              <button
+              <Button variant="ghost"
                 type="button"
                 onClick={() => setFormOpen(false)}
                 className="rounded-full px-4 py-2.5 text-sm font-bold text-muted-foreground hover:text-foreground"
               >
                 إلغاء
-              </button>
+              </Button>
             ) : null}
           </div>
         </form>
