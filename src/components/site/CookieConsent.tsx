@@ -20,7 +20,7 @@ export function CookieConsent() {
 
     const showTimer = window.setTimeout(() => {
       setVisible(true);
-      hideTimer.current = window.setTimeout(() => setLeaving(true), AUTO_HIDE_MS);
+      hideTimer.current = window.setTimeout(() => { try { window.localStorage.setItem(CONSENT_KEY, "dismissed"); } catch { /* optional */ } setLeaving(true); }, AUTO_HIDE_MS);
     }, SHOW_DELAY_MS);
 
     return () => {

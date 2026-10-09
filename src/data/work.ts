@@ -22,7 +22,7 @@ export const workFeed: WorkItem[] = [
     id: "w2",
     employee: "eva",
     title: "فرز ٤٢ رسالة بريد وتحضير ٧ ردود",
-    detail: "٣ رسائل تحتاج قرارك، والباقي رُدّ عليه بنبرتك تلقائياً.",
+    detail: "٣ رسائل تحتاج قرارك، والباقي ردود جاهزة بنبرتك تنتظر موافقتك.",
     channel: "gmail",
     status: "review",
     time: "قبل ٢٥ دقيقة",
