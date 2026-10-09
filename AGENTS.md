@@ -45,6 +45,6 @@
 - Settings links/history use router search.
 - Employee IDs are permanent (DB/URLs).
 - Brand references stay bounded/private and sanitized; why: protect sources.
-- Brand extraction uses safe reader + schemas; profiles require review, competitors inspected quotes. Why: prevent fabricated facts.
+- Brand extraction uses safe reader + schemas; rivals get multi-pass search and inspected quotes. Why: avoid fabricated or dropped facts.
 - Gateway key via `ai-key-health.server.ts`; rejected keys fall back to Gemini. Why: Vercel may hold a stale key.
 - Webhook/login/OAuth origins default to `SITE_ORIGIN`; Vercel maxDuration set in vite.config. Why: old hosts are dead.
