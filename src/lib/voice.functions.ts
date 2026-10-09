@@ -7,7 +7,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const speakText = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({ workspaceId: z.string().uuid(), text: z.string().min(1).max(20000) }).parse(i),
+    z.object({ workspaceId: z.string().uuid(), employeeId: z.string().max(40).optional(), text: z.string().min(1).max(20000) }).parse(i),
   )
   .handler(async ({ data, context }) => {
     const { data: ws } = await (context.supabase as any)
@@ -17,6 +17,6 @@ export const speakText = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!ws) throw new Error("غير مصرّح.");
     const { synthesizeSpeech } = await import("./voice.server");
-    const speech = await synthesizeSpeech(data.text);
+    const speech = await synthesizeSpeech(data.text, data.employeeId);
     return { audio: Buffer.from(speech.bytes).toString("base64"), mime: speech.mime };
   });

@@ -4,7 +4,7 @@ import { Loader2, Square, Volume2 } from "lucide-react";
 
 import { speakText } from "@/lib/voice.functions";
 
-export function ListenButton({ workspaceId, text }: { workspaceId: string; text: string }) {
+export function ListenButton({ workspaceId, employeeId, text }: { workspaceId: string; employeeId?: string; text: string }) {
   const speak = useServerFn(speakText);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlRef = useRef<string | null>(null);
@@ -19,7 +19,7 @@ export function ListenButton({ workspaceId, text }: { workspaceId: string; text:
     try {
       if (!urlRef.current) {
         setState("busy");
-        const r = await speak({ data: { workspaceId, text } });
+        const r = await speak({ data: { workspaceId, employeeId, text } });
         const bin = Uint8Array.from(atob(r.audio), (c) => c.charCodeAt(0));
         urlRef.current = URL.createObjectURL(new Blob([bin], { type: r.mime }));
       }

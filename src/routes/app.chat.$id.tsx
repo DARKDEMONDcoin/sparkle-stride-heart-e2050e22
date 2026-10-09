@@ -1641,7 +1641,7 @@ function ChatView({
                               <MessageActions
                                 listen={
                                   workspace && body.trim().length > 2 ? (
-                                    <ListenButton workspaceId={workspace.id} text={body} />
+                                    <ListenButton workspaceId={workspace.id} employeeId={id} text={body} />
                                   ) : null
                                 }
                                 text={body}
