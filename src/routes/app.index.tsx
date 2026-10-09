@@ -303,6 +303,55 @@ function OnboardingChecklist({ workspaceId, hasWebsite, connected, requested, re
   );
 }
 
+function NameWorkspace({ workspace }: { workspace: { id: string; name: string; website?: string | null } }) {
+  const key = `ziad-named-${workspace.id}`;
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void supabase.auth.getUser().then(({ data }) => {
+      if (!active || !data.user) return;
+      try { if (localStorage.getItem(key)) return; } catch { return; }
+      if (boundWelcomeUser() !== data.user.id) return;
+      const site = readWelcomeDraft()?.website || workspace.website || "";
+      let guess = "";
+      try { if (site) guess = new URL(/^https?:/.test(site) ? site : `https://${site}`).hostname.replace(/^www\./, "").split(".")[0] ?? ""; } catch { /* ignore */ }
+      setName(guess ? guess.charAt(0).toUpperCase() + guess.slice(1) : "");
+      setOpen(true);
+    });
+    return () => { active = false; };
+  }, [workspace.id]);
+  const close = () => { try { localStorage.setItem(key, "1"); } catch { /* optional */ } setOpen(false); };
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 p-4" role="dialog" aria-modal="true" aria-labelledby="name-ws-title">
+      <form
+        className="w-full max-w-sm rounded-3xl border border-border bg-card p-5 shadow-xl"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const v = name.trim().slice(0, 60);
+          if (v.length < 2) return;
+          setSaving(true);
+          const initials = v.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+          const { error } = await supabase.from("workspaces").update({ name: v, initials }).eq("id", workspace.id);
+          setSaving(false);
+          if (!error) { void queryClient.invalidateQueries(); close(); }
+        }}
+      >
+        <h2 id="name-ws-title" className="font-display text-xl font-black">ما اسم مشروعك؟</h2>
+        <p className="mt-1 text-sm text-muted-foreground">يظهر في مساحتك ويستخدمه فريقك في كل عمل.</p>
+        <input autoFocus value={name} onChange={(e) => setName(e.target.value)} maxLength={60} placeholder="مثال: متجر الورد" className="mt-4 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary" />
+        <div className="mt-4 flex gap-2">
+          <Button type="submit" disabled={saving || name.trim().length < 2} className="flex-1">حفظ</Button>
+          <Button type="button" variant="ghost" onClick={close}>تخطي</Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function AppHome() {
   const { data: profile } = useProfile();
   const { data: workspace } = useWorkspace();
@@ -332,7 +381,7 @@ function AppHome() {
     : "فريقك جاهز — ابدأ بطلب واحد.";
 
   return (
-    <AppShell title={`أهلاً ${profile?.full_name ?? ""}`} lead={lead}>
+    <AppShell title={`أهلاً ${profile?.full_name ?? ""}`} lead={workspace?.name ? `${workspace.name} · ${lead}` : lead}>
       {broken.length ? (
         <div className="app-system-alert">
           <span className="app-system-alert-label">تنبيه</span>
@@ -345,6 +394,7 @@ function AppHome() {
         </div>
       ) : null}
 
+      {workspace ? <NameWorkspace workspace={workspace as never} /> : null}
       <RequestBox />
       {workspace ? (
         <OnboardingChecklist

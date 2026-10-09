@@ -968,6 +968,7 @@ export async function runEmployeeTurn(
       intentBlock(intent),
       turnPlanBlock(turnPlan),
       answerPolicyBlock(agentId, intent),
+      "## جودة أول رد\nلا ترد أبداً بسطر خلاصة وحده. إن نقصت معلومات العلامة: إما سؤالان قصيران كحد أقصى، أو مسودة كاملة بعلامات واضحة مثل [اسم العميل] [السعر]. إن وُجد ملف العلامة فاستعمل اسمها ومجالها ونبرتها ولهجتها. اختم كل مخرج عمل بسطر خطوات تالية: «عدّل · اعتمد · اطلب نسخة أخرى».",
       reasoningDepthBlock(agentId as EmployeeId, intent),
       teamBlock,
       coworkerVoiceBlock({
@@ -1192,7 +1193,7 @@ export async function runEmployeeTurn(
       }
     }
 
-    if (!quickTurn) emit({ type: "step", label: longForm ? "أكتب المخرج الكامل الآن" : "أكتب المخرج الآن" });
+    if (!quickTurn) emit({ type: "step", label: `${persona.name} ${longForm ? "يكتب المخرج الكامل" : "يكتب مسودتك"}…` });
 
     const chatMessages = [
       { role: "system", content: system },

@@ -757,8 +757,10 @@ function CalendarPage() {
                 ))}
               </div>
               {isLoading ? (
-                <div className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
-                  <BrandLoader size="sm" />
+                <div className="grid grid-cols-7 gap-px p-1" aria-label="جارٍ تحميل التقويم" role="status">
+                  {Array.from({ length: 35 }, (_, i) => (
+                    <div key={i} className="h-20 animate-pulse rounded-md bg-secondary/70" />
+                  ))}
                 </div>
               ) : (
                 <div className="grid grid-cols-7">

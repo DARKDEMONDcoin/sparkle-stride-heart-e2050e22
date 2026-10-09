@@ -168,7 +168,7 @@ function SidebarBody({ onNavigate, collapsed = false, onToggle }: { onNavigate?:
           })}
         </div>
       </div>
-      <Link to="/pricing" onClick={onNavigate} aria-label={collapsed ? "عرض الأسعار" : undefined} title={collapsed ? "عرض الأسعار" : undefined} className={cn("app-sidebar-pricing", collapsed && "!grid !size-11 !place-items-center !p-0")}>
+      <Link to="/pricing" onClick={onNavigate} aria-label={collapsed ? "عرض الأسعار" : undefined} title={collapsed ? "عرض الأسعار" : undefined} className={cn("app-sidebar-pricing", !inbox?.some((t) => t.last_employee_message_at) && "is-quiet", collapsed && "!grid !size-11 !place-items-center !p-0")}>
         {collapsed ? <ArrowLeft className="size-5" /> : <>
         <span>
           <small>الخطط والسعة</small>
