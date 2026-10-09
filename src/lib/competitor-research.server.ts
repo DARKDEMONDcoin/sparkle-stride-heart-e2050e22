@@ -26,6 +26,7 @@ export async function researchCompetitors(input: { url: string; brand: string; t
   const tried = new Set<string>();
   const pages: CompetitorPage[] = [];
   const assessments: unknown[] = [];
+  let browserBlock: Error | null = null;
   const collect = async (queries: string[], useComparisons: boolean) => {
     const groups = await Promise.all(queries.map((q) => deps.search(q).catch(() => [])));
     const comparisons = new Set<string>();
@@ -88,7 +89,8 @@ export async function researchCompetitors(input: { url: string; brand: string; t
             doc.querySelectorAll('script,style,noscript,nav,footer').forEach((el) => el.remove());
             const text = doc.body?.textContent?.replace(/\s+/g, ' ').trim().slice(0, 8000) ?? '';
             if (text.length >= 150 && !newPages.some((p) => p.url === page.url)) newPages.push({ domain: host, url: page.url, title, text });
-          } catch {
+          } catch (error) {
+            if (error instanceof Error && error.message.includes("Browserbase")) browserBlock = error;
             if (i === 0 && original.pathname !== '/') targets.push(original.toString());
           }
         }
@@ -108,5 +110,6 @@ export async function researchCompetitors(input: { url: string; brand: string; t
       ...(ranked[0] ? [`${ranked[0].domain} alternatives ${brief?.offer || input.category}`] : []),
     ], false);
   }
+  if (!ranked.length && browserBlock) throw browserBlock;
   return ranked;
 }
