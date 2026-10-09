@@ -1,0 +1,1 @@
+export const DESIGN_DRAFT_KEY = "sahl:design-editor:draft";

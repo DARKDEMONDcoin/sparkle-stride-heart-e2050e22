@@ -1,0 +1,2 @@
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS outputs jsonb;
+COMMENT ON COLUMN public.messages.outputs IS 'Full structured employee deliverables retained in chat independently of optional task creation.';
