@@ -40,7 +40,7 @@ export const team: TeamMember[] = [
     name: "سِراج",
     latin: "Siraj",
     role: "مدير السوشيال ميديا",
-    title: "يخطط، يصمّم، وينشر نيابة عنك",
+    title: "يخطط، يصمّم، وينشر بعد موافقتك",
     icon: Megaphone,
     tint: "var(--jade)",
     tintSoft: "oklch(0.66 0.13 168 / 0.14)",
