@@ -48042,3 +48042,5 @@ body:has(.chat-composer-dock) .liquid-glass-sahl.sahl-cookie-consent {
   font-size: 0.78rem; transform: none !important;
 }
 .sahl-cookie-consent p { margin: 0; }
+.app-sidebar-pricing.is-quiet { background: transparent !important; color: var(--muted-foreground) !important; box-shadow: none !important; border-color: transparent !important; }
+.app-sidebar-pricing.is-quiet * { color: inherit !important; }
