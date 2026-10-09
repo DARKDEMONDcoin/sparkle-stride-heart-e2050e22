@@ -4,6 +4,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSecrets } from "./secrets.server";
+import { sanitizeBrandKnowledge } from "./brand-context.server";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/embeddings";
 const MODEL = "google/gemini-embedding-2";
@@ -49,7 +50,7 @@ async function embedBatch(route: { url: string; key: string; model: string }, ba
     throw Object.assign(new Error("تعذّر تحليل المستند الآن. حاول مرة أخرى بعد قليل."), { status });
   }
   const json = (await res.json()) as { data: { index: number; embedding: number[] }[] };
-  const ordered: number[][] = new Array(batch.length);
+  const ordered: number[][] = Array.from({ length: batch.length }, () => []);
   (json.data ?? []).forEach((item, i) => {
     const at = Number.isInteger(item?.index) ? item.index : i;
     if (at >= 0 && at < batch.length) ordered[at] = item.embedding;
@@ -130,7 +131,8 @@ export async function ingestKnowledge(
     console.error("[knowledge] invalid embeddings", vectors.length, chunks.length);
     throw new Error("تعذّر تحليل الملف الآن، أعد المحاولة بعد قليل.");
   }
-  await db.from("knowledge_chunks").delete().eq("workspace_id", input.workspaceId).eq("source", input.source);
+  const { error: deleteError } = await db.from("knowledge_chunks").delete().eq("workspace_id", input.workspaceId).eq("source", input.source);
+  if (deleteError) throw new Error("تعذّر تحديث المستند السابق؛ لم نُضف نسخة متعارضة.");
   const rows = chunks.map((content, position) => ({
     workspace_id: input.workspaceId,
     source: input.source,
@@ -160,7 +162,7 @@ export async function knowledgeContext(db: SupabaseClient, workspaceId: string, 
     if (count <= 8) {
       const { data: all } = await db.from("knowledge_chunks").select("title, content").eq("workspace_id", workspaceId).order("created_at").order("position").limit(8);
       const rows = (all ?? []) as { title: string | null; content: string }[];
-      if (rows.length) return `${header}\n${rows.map((h, i) => `[${i + 1}] ${h.title ?? ""}\n${h.content.slice(0, 1400)}`).join("\n\n")}`;
+      if (rows.length) return `${header}\n${rows.map((h, i) => `[${i + 1}] ${sanitizeBrandKnowledge(h.title ?? "", 200)}\n${sanitizeBrandKnowledge(h.content, 1400)}`).join("\n\n")}`;
     }
     const [vec] = await embed([query.slice(0, 4000)]);
     const { data } = await db.rpc("match_knowledge" as never, { _workspace_id: workspaceId, _query: JSON.stringify(vec), _count: 8 } as never);
@@ -169,7 +171,7 @@ export async function knowledgeContext(db: SupabaseClient, workspaceId: string, 
     // عتبة نسبية: الأقرب دائماً + ما يقاربه، مع حد أدنى يمنع الضجيج.
     const hits = found.filter((h) => h.similarity >= Math.max(0.42, top - 0.08)).slice(0, 6);
     if (!hits.length) return "";
-    return `${header}\n${hits.map((h, i) => `[${i + 1}] ${h.title ?? ""}\n${h.content.slice(0, 1400)}`).join("\n\n")}`;
+    return `${header}\n${hits.map((h, i) => `[${i + 1}] ${sanitizeBrandKnowledge(h.title ?? "", 200)}\n${sanitizeBrandKnowledge(h.content, 1400)}`).join("\n\n")}`;
   } catch (e) {
     console.warn("[knowledge] context skipped:", e instanceof Error ? e.message : e);
     return "";

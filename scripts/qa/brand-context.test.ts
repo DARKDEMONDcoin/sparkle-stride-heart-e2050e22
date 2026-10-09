@@ -56,7 +56,7 @@ test("صوت العلامة يحلل اللهجة والمخاطبة ويخرج 
     stats,
   );
   expect(stats.dialect).toBe("egyptian");
-  expect(rule).toContain("مفردات ممنوعة: الأفضل");
+  expect(rule).toContain("مفردات يُنصح بتجنبها أسلوبياً (ليست حظراً من المالك): الأفضل");
   expect(rule).toContain("جمل قصيرة");
 });
 

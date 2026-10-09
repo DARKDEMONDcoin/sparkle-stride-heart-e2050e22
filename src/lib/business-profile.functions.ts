@@ -6,6 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import type { BusinessProfile } from "@/lib/business-profile.server";
 import { BRAND_EMPLOYEE_IDS } from "@/lib/brand-context.server";
+import { businessProfileSchema } from "./brand-profile-schema";
 
 /**
  * تحليل موقع المستخدم وحفظ «ملف العلامة» في مساحة العمل وعقل العلامة،
@@ -24,6 +25,8 @@ export const profileMyWebsite = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }): Promise<{ profile: BusinessProfile; saved: boolean }> => {
+    const { data: owned } = await context.supabase.from("workspaces").select("id").eq("id", data.workspaceId).eq("owner_id", context.userId).maybeSingle();
+    if (!owned) throw new Error("تحليل وحفظ ملف العلامة متاح لمالك مساحة العمل فقط.");
     const { publicWebsiteUrl } = await import("./welcome-preview.server");
     const safeUrl = publicWebsiteUrl(data.url);
     if (!safeUrl) throw new Error("أدخل رابط موقع عام صالح يبدأ بـ https.");
@@ -42,16 +45,21 @@ export const saveBusinessProfile = createServerFn({ method: "POST" })
       .object({
         workspaceId: z.string().uuid(),
         url: z.string().trim().max(300).default(""),
-        profile: z.record(z.string(), z.unknown()),
+        profile: businessProfileSchema,
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { data: owned } = await context.supabase.from("workspaces").select("id").eq("id", data.workspaceId).eq("owner_id", context.userId).maybeSingle();
+    if (!owned) throw new Error("حفظ ملف العلامة متاح لمالك مساحة العمل فقط.");
+    const { publicWebsiteUrl } = await import("./welcome-preview.server");
+    const url = data.url ? publicWebsiteUrl(data.url)?.toString() : "";
+    if (data.url && !url) throw new Error("أدخل رابط موقع عام صالح.");
     await saveProfile(
       context.supabase,
       data.workspaceId,
-      data.url,
-      data.profile as unknown as BusinessProfile,
+      url ?? "",
+      data.profile,
     );
     return { ok: true as const };
   });
@@ -75,7 +83,7 @@ async function saveProfile(
   const { error } = await supabase
     .from("workspaces")
     .update(patch as never)
-    .eq("id", workspaceId);
+    .eq("id", workspaceId).select("id").single();
   if (error) throw new Error(error.message);
 
   // نسخة مقروءة في عقل العلامة (يستفيد منها الاسترجاع الدلالي) — نستبدل القديمة.
@@ -86,6 +94,9 @@ async function saveProfile(
     profile.usp ? `ما يميزنا: ${profile.usp}` : "",
     profile.locations.length ? `المدن/الفروع: ${profile.locations.join("، ")}` : "",
     profile.competitors.length ? `منافسون: ${profile.competitors.join("، ")}` : "",
+    ...(profile.competitorEvidence ?? []).map((c) => `منافس موثق: ${c.domain} — ${c.reason}\nالمصدر: ${c.url}\nاقتباس: ${c.quote}`),
+    profile.gaps?.length ? `معلومات غير مؤكدة: ${profile.gaps.join("؛ ")}` : "",
+    `صفحات المصدر: ${profile.pagesRead.join("، ")}`,
     profile.platform ? `منصة الموقع: ${profile.platform}` : "",
     profile.dialect ? `لهجة الموقع: ${profile.dialect}` : "",
   ]

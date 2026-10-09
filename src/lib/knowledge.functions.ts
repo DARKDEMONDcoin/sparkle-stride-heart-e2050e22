@@ -71,7 +71,7 @@ export const addKnowledge = createServerFn({ method: "POST" })
         title: z.string().max(200).optional(),
         text: z.string().max(300_000).optional(),
       })
-      .refine((v) => v.url || (v.text && v.text.trim().length > 20), "أضف رابطاً أو نصاً")
+      .refine((v) => v.url || (v.text && v.text.trim().length >= 20), "أضف رابطاً أو نصاً")
       .parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -89,7 +89,7 @@ export const addKnowledge = createServerFn({ method: "POST" })
       source = data.url;
     } else {
       title ||= (text.trim().split("\n")[0] ?? "مستند").slice(0, 80);
-      source = `text:${title}`;
+      source = `text:${crypto.randomUUID()}`;
     }
     const chunks = await ingestKnowledge(context.supabase as never, { workspaceId: data.workspaceId, source, title, text });
     return { chunks, title };

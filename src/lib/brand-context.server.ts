@@ -58,7 +58,7 @@ export function buildBrandContext(
     workspace.industry ? `المجال: ${sanitizeBrandKnowledge(workspace.industry, 120)}` : "",
     workspace.country ? `السوق: ${sanitizeBrandKnowledge(workspace.country, 80)}` : "",
     workspace.website ? `الموقع: ${sanitizeBrandKnowledge(workspace.website, 300)}` : "",
-    profile ? `ملف النشاط المؤكد: ${profile}` : "",
+    profile ? `ملف النشاط المستخرج (الاستنتاجات ليست تأكيداً من المالك؛ راجع المصادر والفجوات): ${profile}` : "",
     voiceText ? `### دليل صوت العلامة المستخرج\n${voiceText}` : "",
     workspace.tone ? `النبرة اليدوية الاحتياطية: ${sanitizeBrandKnowledge(workspace.tone, 200)}` : "",
     workspace.banned_words?.length

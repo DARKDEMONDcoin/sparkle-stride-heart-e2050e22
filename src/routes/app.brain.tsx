@@ -18,6 +18,7 @@ import {
 } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { BrandLoader } from "@/components/site/BrandLoader";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/app/brain")({
   head: () => ({
@@ -43,7 +44,7 @@ function BrainPage() {
       <div className="mx-auto grid w-full min-w-0 max-w-3xl grid-cols-[minmax(0,1fr)] gap-4 sm:gap-5">
         <WorkspaceCard />
         {ws ? (
-          <BusinessProfileCard workspaceId={ws.id} website={ws.website} profile={ws.profile as never} compact />
+          <BusinessProfileCard workspaceId={ws.id} website={ws.website} profile={ws.profile as never} />
         ) : null}
         <BrandVoiceExtractor workspaceId={ws?.id} website={ws?.website} />
         <BrandRules workspaceId={ws?.id} />
@@ -62,13 +63,13 @@ function BrandRules({ workspaceId }: { workspaceId?: string | undefined }) {
   const [draft, setDraft] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const rules = (items ?? []).filter((i) => i.title !== "دليل صوت العلامة" && i.kind !== "learning");
+  const rules = (items ?? []).filter((i) => i.title !== "دليل صوت العلامة" && i.title !== "ملف العلامة" && i.kind !== "learning" && i.kind !== "employee_guideline");
 
   async function onAdd(e: React.FormEvent) {
     e.preventDefault();
     const text = draft.trim();
     if (text.length < 3) return;
-    const firstLine = text.split("\n")[0]!.slice(0, 120);
+    const firstLine = (text.split("\n")[0] ?? text).slice(0, 120);
     try {
       await add.mutateAsync({ kind: "note", title: firstLine, value: text });
       setDraft("");
@@ -100,13 +101,13 @@ function BrandRules({ workspaceId }: { workspaceId?: string | undefined }) {
           aria-label="قاعدة جديدة"
           className="min-w-0 flex-1 rounded-full border border-border bg-transparent px-4 py-2.5 text-sm outline-none focus:border-primary"
         />
-        <button
+        <Button
           type="submit"
           disabled={draft.trim().length < 3 || add.isPending || !workspaceId}
           className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-foreground px-4 py-2.5 text-sm font-bold text-background disabled:opacity-40"
         >
           {add.isPending ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />} أضف
-        </button>
+        </Button>
       </form>
 
       {isLoading ? (
@@ -126,8 +127,9 @@ function BrandRules({ workspaceId }: { workspaceId?: string | undefined }) {
                     onSubmit={async (event) => {
                       event.preventDefault();
                       const body = String(new FormData(event.currentTarget).get("body")).trim();
+                      if (body.length < 3) { toast.error("اكتب قاعدة من 3 أحرف على الأقل."); return; }
                       try {
-                        await update.mutateAsync({ id: item.id, title: body.split("\n")[0]!.slice(0, 120), body });
+                        await update.mutateAsync({ id: item.id, title: (body.split("\n")[0] ?? body).slice(0, 120), body });
                         setEditingId(null);
                         toast.success("تم التحديث.");
                       } catch (error) {
@@ -142,8 +144,8 @@ function BrandRules({ workspaceId }: { workspaceId?: string | undefined }) {
                       className="min-h-20 resize-y rounded-2xl border border-border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary"
                     />
                     <div className="flex gap-2">
-                      <button type="submit" disabled={update.isPending} className="rounded-full bg-foreground px-4 py-1.5 text-xs font-bold text-background">حفظ</button>
-                      <button type="button" onClick={() => setEditingId(null)} className="grid size-8 place-items-center rounded-full border border-border" aria-label="إلغاء"><X className="size-4" /></button>
+                      <Button type="submit" disabled={update.isPending} className="rounded-full bg-foreground px-4 py-1.5 text-xs font-bold text-background">حفظ</Button>
+                      <Button variant="ghost" size="icon" type="button" onClick={() => setEditingId(null)} aria-label="إلغاء"><X className="size-4" /></Button>
                     </div>
                   </form>
                 </li>
@@ -156,11 +158,12 @@ function BrandRules({ workspaceId }: { workspaceId?: string | undefined }) {
                 </p>
                 <Switch
                   checked={active}
-                  onCheckedChange={(v) => toggle.mutate({ id: item.id, active: v })}
+                  disabled={toggle.isPending}
+                  onCheckedChange={(v) => toggle.mutate({ id: item.id, active: v }, { onError: (e) => toast.error(e instanceof Error ? e.message : "تعذر تعديل القاعدة") })}
                   aria-label={active ? "إيقاف القاعدة" : "تشغيل القاعدة"}
                 />
-                <button type="button" onClick={() => setEditingId(item.id)} className="grid size-8 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-secondary" aria-label="تعديل"><Pencil className="size-4" /></button>
-                <button type="button" onClick={() => del.mutate(item.id)} className="grid size-8 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-secondary hover:text-destructive" aria-label="حذف"><Trash2 className="size-4" /></button>
+                <Button variant="ghost" size="icon" type="button" onClick={() => setEditingId(item.id)} aria-label={`تعديل ${item.title}`}><Pencil className="size-4" /></Button>
+                <Button variant="ghost" size="icon" type="button" disabled={del.isPending} onClick={() => del.mutate(item.id, { onError: (e) => toast.error(e instanceof Error ? e.message : "تعذر الحذف") })} aria-label={`حذف ${item.title}`}><Trash2 className="size-4" /></Button>
               </li>
             );
           })}

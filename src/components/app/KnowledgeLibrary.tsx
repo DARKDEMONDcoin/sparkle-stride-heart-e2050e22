@@ -49,7 +49,7 @@ export function KnowledgeLibrary({ workspaceId }: { workspaceId?: string | undef
   const key = ["knowledge", workspaceId];
   const asUrl = isUrl(value);
 
-  const { data: items = [], isLoading } = useQuery({
+  const { data: items = [], isLoading, error: listError } = useQuery({
     queryKey: key,
     enabled: Boolean(workspaceId),
     queryFn: () => list({ data: { workspaceId: workspaceId ?? "" } }),
@@ -131,8 +131,9 @@ export function KnowledgeLibrary({ workspaceId }: { workspaceId?: string | undef
       </form>
 
       <ul className="mt-3 divide-y divide-border">
+        {listError ? <li role="alert" className="py-3 text-sm text-destructive">تعذر تحميل المستندات. حاول تحديث الصفحة.</li> : null}
         {isLoading ? <li className="py-3 text-sm text-muted-foreground">جارٍ التحميل…</li> : null}
-        {!isLoading && !items.length ? (
+        {!isLoading && !listError && !items.length ? (
           <li className="py-3 text-sm text-muted-foreground">لا توجد مستندات بعد.</li>
         ) : null}
         {items.map((it) => {

@@ -17,12 +17,14 @@ import {
 import { AppIcon, appLabel } from "@/components/site/AppIcon";
 import { getMember } from "@/data/team";
 import type { BusinessProfile } from "@/lib/business-profile.server";
-import { profileMyWebsite } from "@/lib/business-profile.functions";
+import { profileMyWebsite, saveBusinessProfile } from "@/lib/business-profile.functions";
 import { cn } from "@/lib/utils";
 import { useIntegrations } from "@/lib/data";
 import { CheckCircle2 } from "lucide-react";
 import { Portrait } from "@/components/site/Portrait";
 import { SiteFavicon } from "@/components/app/SiteBadge";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import defaultWorkspace from "@/assets/default-workspace-identity.jpg";
 
 type Props = {
@@ -53,21 +55,39 @@ export function BusinessProfileCard({
 }: Props) {
   const qc = useQueryClient();
   const run = useServerFn(profileMyWebsite);
+  const save = useServerFn(saveBusinessProfile);
   const { data: connected } = useIntegrations(workspaceId);
   const connectedSet = new Set((connected ?? []).filter((c) => c.status === "connected").map((c) => c.provider));
   const [url, setUrl] = useState(website ?? "");
   const [result, setResult] = useState<BusinessProfile | null>(null);
+  const [reviewUrl, setReviewUrl] = useState("");
   const attemptedWelcome = useRef(false);
 
   const mutation = useMutation({
-    mutationFn: (targetUrl: string) => run({ data: { workspaceId, url: targetUrl, save: true } }),
+    mutationFn: (targetUrl: string) => run({ data: { workspaceId, url: targetUrl, save: targetUrl === welcomeWebsite } }),
     onSuccess: (r, targetUrl) => {
       setResult(r.profile);
-      onProfiled?.(r.profile, url);
+      setReviewUrl(targetUrl);
+      if (r.saved) onProfiled?.(r.profile, targetUrl);
       if (targetUrl === welcomeWebsite) onWelcomeSaved?.();
       void qc.invalidateQueries({ queryKey: ["workspace"] });
       void qc.invalidateQueries({ queryKey: ["brain", workspaceId] });
     },
+  });
+
+  const saving = useMutation({
+    mutationFn: () => {
+      if (!result) throw new Error("حلل الموقع أولاً.");
+      return save({ data: { workspaceId, url: reviewUrl, profile: result } });
+    },
+    onSuccess: () => {
+      if (result) onProfiled?.(result, reviewUrl);
+      setResult(null);
+      void qc.invalidateQueries({ queryKey: ["workspace"] });
+      void qc.invalidateQueries({ queryKey: ["brain", workspaceId] });
+      toast.success("تم حفظ ملف العلامة بعد مراجعتك.");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "تعذر حفظ الملف"),
   });
 
   useEffect(() => {
@@ -152,7 +172,7 @@ export function BusinessProfileCard({
           placeholder="https://your-site.com"
           className={cn(field, "flex-1 text-start")}
         />
-        <button
+        <Button
           type="submit"
           disabled={mutation.isPending || url.trim().length < 4}
           className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-foreground px-5 py-3 text-sm font-bold text-background disabled:opacity-60"
@@ -165,12 +185,11 @@ export function BusinessProfileCard({
             <Sparkles className="size-4" />
           )}
           {mutation.isPending ? "نقرأ موقعك…" : has ? "أعد التحليل" : "افهم نشاطي"}
-        </button>
+        </Button>
       </form>
       {mutation.isPending ? (
         <p className="mt-2 text-xs text-muted-foreground">
-          نقرأ حتى 6 صفحات (عنّا، الخدمات، الأسعار…) ونكتشف المنصة واللهجة والمنافسين — نحو 30
-          ثانية.
+          جارٍ تحليل الموقع والتحقق من صفحات المنافسين؛ قد يستغرق بضع دقائق.
         </p>
       ) : null}
       {mutation.error ? (
@@ -195,9 +214,25 @@ export function BusinessProfileCard({
               <Fact icon={Store} label="المنتجات/الخدمات" items={p.products} />
               <Fact icon={Users} label="الجمهور" items={p.audience ? [p.audience] : []} />
               <Fact icon={MapPin} label="المدن/الفروع" items={p.locations} />
-              <Fact icon={Swords} label="منافسون محتملون" items={p.competitors} ltr />
+              <Fact icon={Store} label="التميّز المذكور بالموقع" items={p.usp ? [p.usp] : []} />
             </div>
           ) : null}
+
+          {p.analyzedAt ? <p className="text-xs text-muted-foreground">آخر فحص: {new Date(p.analyzedAt).toLocaleString("ar-EG")}</p> : null}
+          <div className="border-t border-border pt-4">
+            <h3 className="flex items-center gap-2 text-sm font-bold"><Swords className="size-4" /> منافسون من مصادر عامة</h3>
+            {p.competitorEvidence?.length ? <ul className="mt-3 divide-y divide-border">{p.competitorEvidence.map((c) => <li key={c.domain} className="py-3 text-sm leading-7">
+              <a href={c.url} target="_blank" rel="noopener noreferrer" className="break-all font-bold text-primary underline" dir="ltr">{c.domain}</a>
+              <p>{c.reason}</p><blockquote className="mt-1 border-s-2 border-border ps-3 text-muted-foreground">«{c.quote}»</blockquote>
+            </li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">لم تتوفر أدلة كافية لتأكيد المنافسين في هذا الفحص.</p>}
+          </div>
+          {p.pagesRead?.length ? <details className="border-t border-border pt-3"><summary className="cursor-pointer text-sm font-bold">الصفحات المقروءة ({p.pagesRead.length})</summary><ul className="mt-2 space-y-2">{p.pagesRead.map((page) => <li key={page}><a href={page} target="_blank" rel="noopener noreferrer" dir="ltr" className="block break-all text-xs text-primary underline">{page}</a></li>)}</ul></details> : null}
+          {p.gaps?.length ? <div className="border-t border-border pt-3"><h3 className="text-sm font-bold">ما يحتاج تأكيدك</h3><ul className="mt-2 list-inside list-disc space-y-1 text-sm text-muted-foreground">{p.gaps.map((gap) => <li key={gap}>{gap}</li>)}</ul></div> : null}
+          {result && reviewUrl !== welcomeWebsite ? <form className="space-y-3 border-t border-border pt-4" onSubmit={(e) => { e.preventDefault(); saving.mutate(); }}>
+            <h3 className="text-sm font-bold">مراجعة ملف العلامة</h3>
+            {([['name', 'اسم العلامة'], ['industry', 'المجال'], ['summary', 'وصف النشاط'], ['audience', 'الجمهور'], ['usp', 'التميّز']] as const).map(([key, label]) => <label key={key} className="block text-xs font-bold">{label}<textarea className="mt-1 min-h-16 w-full resize-y rounded-lg border border-border bg-background p-3 text-sm font-normal" maxLength={key === 'summary' ? 800 : key === 'audience' ? 500 : key === 'usp' ? 400 : key === 'name' ? 120 : 80} value={result[key]} onChange={(e) => setResult({ ...result, [key]: e.target.value })} /></label>)}
+            <div className="flex flex-wrap gap-2"><Button type="submit" disabled={saving.isPending}>{saving.isPending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />}حفظ الملف بعد المراجعة</Button><Button type="button" variant="outline" disabled={saving.isPending} onClick={() => setResult(null)}>إلغاء</Button></div>
+          </form> : null}
 
           {p.recommendedIntegrations?.length ? (
             <div>
