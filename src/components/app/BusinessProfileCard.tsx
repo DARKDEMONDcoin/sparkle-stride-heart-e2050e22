@@ -102,6 +102,7 @@ export function BusinessProfileCard({
     mutation.mutate(raw);
   }, [website, welcomeWebsite, mutation.mutate]);
 
+  const [needUrl, setNeedUrl] = useState(false);
   const p = (result ?? profile) as Partial<BusinessProfile> | null;
   const has = Boolean(p?.summary || p?.products?.length);
   const savedSite = (website ?? "").trim() || (mutation.isSuccess ? url.trim() : "");
@@ -160,13 +161,15 @@ export function BusinessProfileCard({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (url.trim().length > 3 && !mutation.isPending) mutation.mutate(url.trim());
+          if (url.trim().length < 4) { setNeedUrl(true); return; }
+          if (!mutation.isPending) mutation.mutate(url.trim());
         }}
         className="mt-4 flex flex-col gap-2 sm:flex-row"
       >
         <input
           value={url}
-          onChange={(e) => setUrl(e.target.value)}
+          onChange={(e) => { setUrl(e.target.value); setNeedUrl(false); }}
+          aria-describedby="brand-url-help"
           dir="ltr"
           inputMode="url"
           placeholder="https://your-site.com"
@@ -174,7 +177,7 @@ export function BusinessProfileCard({
         />
         <Button
           type="submit"
-          disabled={mutation.isPending || url.trim().length < 4}
+          disabled={mutation.isPending}
           className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-foreground px-5 py-3 text-sm font-bold text-background disabled:opacity-60"
         >
           {mutation.isPending ? (
@@ -187,6 +190,8 @@ export function BusinessProfileCard({
           {mutation.isPending ? "نقرأ موقعك…" : has ? "أعد التحليل" : "افهم نشاطي"}
         </Button>
       </form>
+      {needUrl ? <p id="brand-url-help" className="mt-2 text-xs font-bold text-coral">ضع رابط موقعك أولاً</p> : null}
+      {mutation.isPending ? <ScanProgress /> : null}
       {mutation.error ? (
         <p className="mt-3 rounded-2xl bg-coral/12 px-4 py-3 text-sm font-semibold text-coral">
           {mutation.error instanceof Error ? mutation.error.message : "تعذّر تحليل الموقع"}
@@ -331,6 +336,26 @@ function Fact({
       <p className="mt-1 text-sm" dir={ltr ? "ltr" : undefined}>
         {items.join("، ")}
       </p>
+    </div>
+  );
+}
+
+const scanSteps = ["نقرأ صفحات موقعك", "نفهم منتجاتك وجمهورك", "نبحث عن منافسيك المباشرين", "نجهز الملف لمراجعتك"];
+function ScanProgress() {
+  const [sec, setSec] = useState(0);
+  useEffect(() => { const t = window.setInterval(() => setSec((s) => s + 1), 1000); return () => window.clearInterval(t); }, []);
+  const step = Math.min(Math.floor(sec / 15), scanSteps.length - 1);
+  return (
+    <div className="mt-3 rounded-2xl bg-secondary/60 p-4 text-sm" role="status">
+      <ol className="space-y-1.5">
+        {scanSteps.map((label, i) => (
+          <li key={label} className={cn("flex items-center gap-2", i > step ? "text-muted-foreground" : "font-bold")}>
+            {i < step ? <CheckCircle2 className="size-4 text-jade" /> : i === step ? <Loader2 className="size-4 animate-spin text-primary" /> : <span className="size-4 rounded-full border border-border" />}
+            {label}
+          </li>
+        ))}
+      </ol>
+      <p className="mt-2 text-xs text-muted-foreground">الوقت المتوقع: دقيقة إلى دقيقتين · مضى {sec} ثانية</p>
     </div>
   );
 }
