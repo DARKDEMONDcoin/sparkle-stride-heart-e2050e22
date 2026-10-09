@@ -1,3 +1,4 @@
+import { bindWelcomeUser, hasWelcomeAnswers, readWelcomeDraft } from "@/lib/welcome-draft";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
