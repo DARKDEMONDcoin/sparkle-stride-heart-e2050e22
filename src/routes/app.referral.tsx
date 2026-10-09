@@ -196,7 +196,7 @@ function ReferralPage() {
       <section className="liquid-glass-sahl p-5 sm:p-6">
         <h2 className="text-lg font-extrabold">آخر الإحالات</h2>
         {dashboard.referrals.length ? <ol className="rc-timeline mt-5 space-y-4">
-          {dashboard.referrals.slice(0, 8).map((r) => { const st = referralStatuses[r.status] ?? referralStatuses.signed_up; return <li key={r.id} className="flex flex-wrap items-center justify-between gap-2">
+          {dashboard.referrals.slice(0, 8).map((r) => { const st = referralStatuses[r.status] ?? { label: "قيد الانتظار", tone: "rc-tone-gold" }; return <li key={r.id} className="flex flex-wrap items-center justify-between gap-2">
             <div><p className="text-sm font-extrabold">عميل جديد</p><p className="rc-muted text-xs">{dateAr(r.attributedAt)}{r.firstPaidAt ? ` · أول دفعة ${dateAr(r.firstPaidAt)}` : ""}</p></div>
             <span className={`rc-pill ${st.tone}`}>{st.label}</span>
           </li>; })}
