@@ -1832,7 +1832,7 @@ function ChatView({
                 steps={liveSteps.length ? liveSteps : liveStep ? [liveStep] : []}
                 stepTimes={liveStepTimes}
                 startedAt={sendStartedRef.current}
-                quick={liveMode === "quick"}
+                quick={liveMode !== "work"}
                 browser={browser}
                 writing={Boolean(liveText.trim())}
               />
