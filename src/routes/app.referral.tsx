@@ -203,7 +203,7 @@ function ReferralPage() {
 
       <Tabs value={tab} onValueChange={setTab} dir="rtl">
         <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-none border-b border-border bg-transparent p-0">
-          {[["start", "البداية"], ["earnings", "الأرباح"], ["referrals", "الإحالات"], ["levels", "المستويات"], ["faq", "الأسئلة"]].map(([v, l]) => <TabsTrigger key={v} value={v} className="shrink-0 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-bold data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none">{l}</TabsTrigger>)}
+          {([["start", "البداية"], ["earnings", "الأرباح"], ["referrals", "الإحالات"], ["levels", "المستويات"], ["faq", "الأسئلة"]] as const).map(([v, l]) => <TabsTrigger key={v} value={v} className="shrink-0 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-bold data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none">{l}</TabsTrigger>)}
         </TabsList>
 
         <TabsContent value="start" className="mt-5">
