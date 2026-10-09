@@ -48044,3 +48044,125 @@ body:has(.chat-composer-dock) .liquid-glass-sahl.sahl-cookie-consent {
 .sahl-cookie-consent p { margin: 0; }
 .app-sidebar-pricing.is-quiet { background: transparent !important; color: var(--muted-foreground) !important; box-shadow: none !important; border-color: transparent !important; }
 .app-sidebar-pricing.is-quiet * { color: inherit !important; }
+
+/* Ziad Partners: scoped metal, ink and editorial white. */
+:root {
+  --partner-ink: oklch(0.18 0.006 75);
+  --partner-panel: oklch(0.23 0.009 75);
+  --partner-gold: oklch(0.79 0.09 80);
+  --partner-light: oklch(0.96 0.025 85);
+  --partner-muted: oklch(0.73 0.02 80);
+  --partner-line: color-mix(in oklab, var(--partner-gold) 24%, transparent);
+  --partner-metal: linear-gradient(120deg, var(--partner-light), var(--partner-gold) 40%, var(--gold) 65%, var(--partner-light));
+  --partner-shadow: 0 24px 45px -22px color-mix(in oklab, var(--ink) 75%, transparent);
+}
+.ziad-referral { width: 100%; min-width: 0; padding-bottom: 3rem; }
+.ziad-referral * { letter-spacing: 0; }
+.ziad-referral-hero { background: var(--partner-ink); color: var(--partner-light); padding: 1.75rem 2rem 0; overflow: hidden; border-radius: 8px; }
+.ziad-referral-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.ziad-partner-eyebrow { display: inline-flex; align-items: center; gap: .65rem; color: var(--partner-gold); font-size: .75rem; font-weight: 700; }
+.ziad-referral-heading > a { display: flex; align-items: center; gap: .4rem; font-size: .75rem; color: var(--partner-muted); }
+.ziad-referral-hero-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 2.5rem; padding: 2.75rem 0; }
+.ziad-referral-kicker { font-size: .85rem; color: var(--partner-muted); }
+.ziad-referral-pitch h2 { margin: .55rem 0 1rem; font-size: 2.75rem; line-height: 1.3; font-weight: 700; }
+.ziad-referral-pitch h2 span { color: var(--partner-gold); }
+.ziad-referral-promise { font-size: 1.65rem; font-weight: 600; line-height: 1.6; }
+.ziad-referral-description { max-width: 26rem; font-size: .875rem; line-height: 1.9; color: var(--partner-muted); margin-top: .85rem; }
+.ziad-referral .ziad-gold-button { min-height: 48px; margin-top: 1.5rem; padding: .75rem 1.25rem; background: var(--partner-metal); color: var(--partner-ink); font-weight: 700; border: 1px solid var(--partner-gold); border-radius: 6px; }
+.ziad-referral .ziad-gold-button:hover { background: var(--partner-gold); }
+.ziad-referral-trust { display: flex; flex-wrap: wrap; gap: 1.25rem; margin-top: 1.25rem; color: var(--partner-muted); font-size: .7rem; }
+.ziad-referral-trust span { display: flex; gap: .4rem; align-items: center; }
+.ziad-referral-trust svg { width: 14px; height: 14px; color: var(--partner-gold); }
+.ziad-referral-card-area { min-width: 0; }
+.ziad-card-scene { perspective: 1200px; display: grid; justify-items: center; width: 100%; padding: 1.5rem 0; }
+.ziad-partner-card { --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 50%; width: min(100%, 25rem); aspect-ratio: 1.586; display: flex; flex-direction: column; justify-content: space-between; padding: 1.5rem; border-radius: 14px; position: relative; isolation: isolate; overflow: hidden; color: var(--partner-light); transform: rotateX(var(--rx)) rotateY(var(--ry)) rotate(-4deg); transition: transform .25s ease; border: 1px solid var(--partner-line); background: linear-gradient(145deg, var(--partner-panel), var(--partner-ink) 65%); box-shadow: var(--partner-shadow), inset 0 1px 0 var(--partner-line); }
+.ziad-partner-card::before { content: ''; position: absolute; inset: 0; z-index: -1; background: repeating-linear-gradient(120deg, transparent 0 9px, var(--partner-line) 9px 10px); opacity: .2; mask-image: linear-gradient(90deg, transparent, var(--ink)); }
+.ziad-partner-card::after { content: ''; position: absolute; pointer-events: none; inset: 0; background: linear-gradient(120deg, transparent 20%, var(--partner-line) 45%, transparent 65%); opacity: .5; }
+.ziad-card-top, .ziad-card-middle, .ziad-card-bottom { display: flex; align-items: center; justify-content: space-between; gap: 1rem; position: relative; z-index: 1; }
+.ziad-card-top > svg { color: var(--partner-gold); }
+.ziad-card-brand { display: flex; align-items: center; gap: .6rem; }
+.ziad-card-brand img { width: 40px; height: 40px; object-fit: contain; }
+.ziad-card-brand strong { display: block; font-size: 1.25rem; line-height: 1.4; }
+.ziad-card-brand span { display: block; color: var(--partner-muted); font-size: .55rem; }
+.ziad-card-caption { font-size: .7rem; color: var(--partner-muted); }
+.ziad-card-rate { display: block; font-size: 3.25rem; font-weight: 700; line-height: 1.15; background: var(--partner-metal); color: transparent; background-clip: text; }
+.ziad-card-rate small { font-size: 1.75rem; }
+.ziad-card-bottom { border-top: 1px solid var(--partner-line); padding-top: .7rem; font-size: .6rem; color: var(--partner-muted); }
+.ziad-card-bottom b { color: var(--partner-gold); font-weight: 500; }
+.ziad-card-note { display: flex; gap: .5rem; align-items: center; color: var(--partner-muted); font-size: .7rem; margin-top: 2rem; }
+.ziad-card-note > span { width: 5px; height: 5px; border-radius: 50%; background: var(--partner-gold); }
+.ziad-referral-hero-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; border-top: 1px solid var(--partner-line); padding: 1rem 0; color: var(--partner-muted); font-size: .75rem; }
+.ziad-referral-hero-footer > span:last-child { display: flex; align-items: center; gap: .5rem; }
+.ziad-referral-hero-footer strong { font-size: 1.1rem; color: var(--partner-gold); }
+.ziad-referral-link { padding: 2rem 0 1.5rem; border-bottom: 1px solid var(--border); }
+.ziad-referral-section-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem; }
+.ziad-section-number { font-size: .6rem; font-weight: 600; color: var(--muted-foreground); margin-bottom: .4rem; text-align: right; }
+.ziad-referral-section-title h3 { font-weight: 700; font-size: 1.25rem; }
+.ziad-link-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .65rem; }
+.ziad-link-field { display: flex; min-width: 0; align-items: center; gap: .75rem; padding: .85rem 1rem; background: var(--muted); border: 1px solid var(--border); border-radius: 6px; }
+.ziad-link-field svg { color: var(--gold-deep); }
+.ziad-link-field code { font-size: .8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ziad-referral .ziad-copy-button { height: auto; min-height: 48px; border-radius: 6px; background: var(--foreground); color: var(--background); }
+.ziad-link-footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: .5rem; }
+.ziad-link-footer > p { color: var(--muted-foreground); font-size: .75rem; }
+.ziad-link-footer > div { display: flex; }
+.ziad-referral-overview { display: grid; grid-template-columns: 1.5fr 1fr; gap: 2rem; padding: 2rem 0; }
+.ziad-referral-metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); align-items: center; gap: .75rem; }
+.ziad-referral-metric { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: .65rem; padding-inline-start: .85rem; border-inline-start: 1px solid var(--border); }
+.ziad-referral-metric svg { color: var(--gold-deep); }
+.ziad-referral-metric strong { font-size: 1.75rem; font-weight: 600; }
+.ziad-referral-metric span { font-size: .7rem; color: var(--muted-foreground); }
+.ziad-referral-balance { background: var(--secondary); padding: 1.25rem; border-radius: 8px; }
+.ziad-balance-heading { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.ziad-balance-heading > span { display: flex; align-items: center; gap: .5rem; font-size: .75rem; font-weight: 600; }
+.ziad-balance-total { display: block; width: fit-content; font-size: 2rem; font-weight: 600; margin-top: .75rem; }
+.ziad-referral-balance > p { font-size: .7rem; color: var(--jade-deep); }
+.ziad-referral-balance dl { border-top: 1px solid var(--border); padding-top: .75rem; margin-top: 1rem; display: grid; gap: .4rem; font-size: .7rem; }
+.ziad-referral-balance dl > div { display: flex; justify-content: space-between; gap: .75rem; }
+.ziad-referral-balance dt { color: var(--muted-foreground); }
+.ziad-referral-next { display: flex; gap: 1rem; align-items: center; padding: 1.25rem 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 1.75rem; }
+.ziad-next-icon { color: var(--gold-deep); background: var(--gold-soft); padding: .75rem; border-radius: 6px; }
+.ziad-referral-next h3 { font-size: .9rem; font-weight: 700; }
+.ziad-referral-next p { font-size: .75rem; color: var(--muted-foreground); margin-top: .3rem; }
+.ziad-referral-tabs [role=tablist] { justify-content: flex-start; }
+.ziad-referral-tabs [role=tab] { font-size: .85rem; padding: .8rem 1rem; }
+.ziad-referral-step { position: relative; padding: 1.5rem; border: 1px solid var(--border); border-radius: 8px; background: var(--background); text-align: right; }
+.ziad-step-icon { color: var(--gold-deep); margin-bottom: .25rem; }
+.ziad-referral-step h3 { margin-top: .75rem; }
+.ziad-referral-step p { min-height: 4rem; }
+@media (max-width: 900px) {
+  .ziad-referral-hero-grid { gap: 1.5rem; }
+  .ziad-referral-pitch h2 { font-size: 2.25rem; }
+  .ziad-referral-promise { font-size: 1.35rem; }
+  .ziad-partner-card { padding: 1rem; }
+  .ziad-referral-overview { grid-template-columns: 1fr; gap: 1.5rem; }
+}
+@media (max-width: 639px) {
+  .ziad-referral-hero { padding: 1.25rem 1.1rem 0; }
+  .ziad-referral-heading { gap: .5rem; }
+  .ziad-partner-eyebrow { font-size: .65rem; }
+  .ziad-referral-heading > a { font-size: .65rem; }
+  .ziad-referral-hero-grid { grid-template-columns: 1fr; padding: 1.75rem 0 .5rem; gap: .75rem; }
+  .ziad-referral-pitch h2 { font-size: 2rem; margin-bottom: .75rem; }
+  .ziad-referral-promise { font-size: 1.3rem; }
+  .ziad-referral-description { font-size: .8rem; }
+  .ziad-card-scene { padding: 1.25rem .65rem; }
+  .ziad-partner-card { padding: 1.15rem; max-width: 22rem; }
+  .ziad-card-brand img { width: 32px; height: 32px; }
+  .ziad-card-brand strong { font-size: 1.1rem; }
+  .ziad-card-rate { font-size: 2.75rem; }
+  .ziad-card-note { margin-top: 1.5rem; }
+  .ziad-referral-hero-footer { font-size: .65rem; }
+  .ziad-link-row { grid-template-columns: minmax(0,1fr) auto; }
+  .ziad-referral .ziad-copy-button { padding-inline: .75rem; font-size: .75rem; }
+  .ziad-link-field { padding-inline: .65rem; gap: .4rem; }
+  .ziad-link-field code { font-size: .7rem; }
+  .ziad-link-footer { flex-direction: column; align-items: flex-start; gap: .35rem; }
+  .ziad-link-footer > div { width: 100%; justify-content: space-between; }
+  .ziad-referral-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1.5rem .75rem; }
+  .ziad-referral-tabs [role=tab] { padding-inline: .6rem; font-size: .75rem; }
+  .ziad-referral-next { gap: .6rem; }
+  .ziad-next-icon { padding: .5rem; }
+  .ziad-referral-step { padding: 1.25rem; }
+}
+@media (prefers-reduced-motion: reduce) { .ziad-partner-card { transition: none; transform: none; } }
