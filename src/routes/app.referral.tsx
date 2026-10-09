@@ -7,7 +7,7 @@ import { ArrowLeft, Check, CheckCircle2, Clock3, Coins, Copy, Crown, DollarSign,
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app/AppShell";
-import ziadLogo from "@/assets/ziad-logo.png";
+import { LogoMark } from "@/components/site/LogoMark";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,7 @@ function PartnerCard({ rate, level }: { rate: number; level: string }) {
   }
   return <div className="ziad-card-scene">
     <div ref={ref} onPointerMove={move} onPointerLeave={leave} className="ziad-partner-card" role="img" aria-label={`بطاقة شريك زياد، مستوى ${level}، عمولة ${rate}٪`}>
-      <div className="ziad-card-top"><div className="ziad-card-brand"><img src={ziadLogo} alt="" width={52} height={52} /><div><strong>زياد</strong><span dir="ltr">ZIAD PARTNERS</span></div></div><Crown className="size-6" aria-hidden="true" /></div>
+      <div className="ziad-card-top"><div className="ziad-card-brand"><LogoMark size={52} /><div><strong>زياد</strong><span dir="ltr">ZIAD PARTNERS</span></div></div><Crown className="size-6" aria-hidden="true" /></div>
       <div className="ziad-card-middle"><div><span className="ziad-card-caption">عمولتك المتكررة</span><strong className="ziad-card-rate">{rate.toLocaleString("ar")}<small>٪</small></strong></div><div className="ref-chip" aria-hidden="true" /></div>
       <div className="ziad-card-bottom"><span>عضوية الشركاء <b>· {level}</b></span><span dir="ltr">ZIAD / {String(rate).padStart(2, "0")}</span></div>
     </div>
