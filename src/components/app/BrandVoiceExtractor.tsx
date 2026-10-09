@@ -81,7 +81,7 @@ export function BrandVoiceExtractor({
             onCheckedChange={(v) =>
               toggle.mutate(
                 { id: guide.id, active: v },
-                { onSuccess: () => toast.success(v ? "تم تشغيل صوت العلامة" : "تم إيقاف صوت العلامة") },
+                { onSuccess: () => toast.success(v ? "تم تشغيل صوت العلامة" : "تم إيقاف صوت العلامة"), onError: () => toast.error("تعذر تغيير حالة صوت العلامة") },
               )
             }
             aria-label="تشغيل صوت العلامة للموظفين"

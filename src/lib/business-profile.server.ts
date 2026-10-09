@@ -357,7 +357,7 @@ export async function profileWebsite(rawUrl: string): Promise<BusinessProfile> {
           const text = doc.body?.textContent?.replace(/\s+/g, " ").trim().slice(0, 4500) ?? "";
           const domain = new URL(page.url).hostname.replace(/^www\./, "");
           if (text.length < 150 || domain !== new URL(r.url).hostname.replace(/^www\./, "")) return null;
-          return { domain, url: page.url, title: r.title.slice(0, 200), text };
+          return { domain, url: page.url, title: (doc.querySelector("title")?.textContent ?? r.title).trim().slice(0, 200), text };
         } catch { return null; }
       }))).filter((p): p is NonNullable<typeof p> => p !== null);
     }

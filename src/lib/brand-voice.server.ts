@@ -597,7 +597,7 @@ export async function synthesizeVoice(
 export function voiceRuleText(profile: BrandVoiceProfile, stats: StyleStats): string {
   const t = profile.tone ?? { formality: 5, energy: 5, warmth: 5, humor: 3 };
   const lines = [
-    `قاعدة نبرة إلزامية — صوت العلامة: ${profile.summary}`,
+    `دليل صوت العلامة المستخرج — توصيات أسلوبية: ${profile.summary}`,
     `الشخصية: ${(profile.personality ?? []).join("، ")}`,
     `اللهجة: ${profile.dialect || dialectLabel[stats.dialect]} · المخاطبة: ${profile.addressing || stats.addressing}`,
     `النبرة (0-10): رسمية ${t.formality} · حيوية ${t.energy} · دفء ${t.warmth} · فكاهة ${t.humor}`,
