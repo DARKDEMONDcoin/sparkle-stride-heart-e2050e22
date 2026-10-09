@@ -1,5 +1,6 @@
 import { LogoMark } from "@/components/site/LogoMark";
 import { cn } from "@/lib/utils";
+import { useRouterState } from "@tanstack/react-router";
 import { loadingText } from "@/lib/page-label";
 
 /** علامة التحميل الرسمية: شعار زياد داخل حلقة ضوئية دوّارة. */
@@ -32,9 +33,11 @@ export function BrandLoader({
 
 /** شاشة تحميل كاملة تُستخدم أثناء انتقال الصفحات. */
 export function BrandLoaderScreen({ label }: { label?: string }) {
+  // الوجهة الجاري تحميلها (لا الصفحة السابقة) — مع الاستعلام لمعرفة الموظف.
+  const target = useRouterState({ select: (s) => s.location.pathname + (s.location.searchStr ?? "") });
   return (
     <div className="brand-loader-screen">
-      <BrandLoader size="lg" label={label ?? loadingText()} />
+      <BrandLoader size="lg" label={label ?? loadingText(target)} />
     </div>
   );
 }
