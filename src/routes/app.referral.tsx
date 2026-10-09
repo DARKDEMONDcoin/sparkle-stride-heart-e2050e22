@@ -182,7 +182,7 @@ function ReferralPage() {
         <div className="ref-stage min-h-72 border-t border-border lg:border-r lg:border-t-0">
           <PartnerCard rate={dashboard.rate} level={currentLevel.name} code={dashboard.code} />
           <div className="ref-shadow" aria-hidden="true" />
-          <span className="absolute bottom-3 left-3 rounded-md border border-border bg-background/80 px-2 py-1 text-[0.6rem] font-black text-muted-foreground backdrop-blur">بطاقة شريك رسمية</span>
+          <span className="absolute left-3 top-3 rounded-md border border-border bg-background/80 px-2 py-1 text-[0.6rem] font-black text-muted-foreground backdrop-blur">بطاقة شريك رسمية</span>
         </div>
       </section>
 
