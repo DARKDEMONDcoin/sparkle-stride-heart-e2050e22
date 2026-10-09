@@ -167,7 +167,7 @@ export function AgendaMonthGrid({
   }
   const today = localKey(new Date());
   return (
-    <div className="hidden overflow-hidden rounded-xl border border-border md:grid md:grid-cols-7" aria-label="الشبكة الشهرية">
+    <div className="hidden overflow-hidden rounded-xl border border-border xl:grid xl:grid-cols-7" aria-label="الشبكة الشهرية">
       {DAYS.map((d) => (
         <div key={d} className="border-b border-border bg-secondary/50 py-2 text-center text-xs font-bold text-muted-foreground">
           {d}

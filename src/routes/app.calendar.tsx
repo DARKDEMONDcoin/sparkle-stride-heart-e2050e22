@@ -703,7 +703,7 @@ function CalendarPage() {
           </button>
         ) : null}
       </div>
-      <p className="-mt-2 mb-3 hidden text-[0.68rem] text-muted-foreground md:block">
+      <p className="-mt-2 mb-3 hidden text-[0.68rem] text-muted-foreground xl:block">
         اسحب أي منشور غير منشور إلى يوم آخر لإعادة جدولته بنفس الساعة، واسحب مقالات نور لتحديد موعد نشرها.
       </p>
 
@@ -747,7 +747,7 @@ function CalendarPage() {
               <ChevronLeft className="size-5" />
             </button>
           </div>
-          <div className="hidden overflow-x-auto pb-1 md:block">
+          <div className="hidden overflow-x-auto pb-1 xl:block">
             <div className="min-w-[34rem] p-2 sm:p-3">
               <div className="grid grid-cols-7 border-b border-border text-center text-[0.68rem] font-bold text-muted-foreground">
                 {DAYS_AR.map((d) => (
@@ -877,7 +877,7 @@ function CalendarPage() {
               )}
             </div>
           </div>
-          <div className="space-y-3 p-4 md:hidden">
+          <div className="space-y-3 p-4 xl:hidden">
             {monthPosts.map((post) => {
               const date = new Date(post.scheduled_at);
               return (
@@ -922,7 +922,7 @@ function CalendarPage() {
             ) : null}
           </div>
           {!isLoading && list.length === 0 && (member !== "nour" || articles.length === 0) ? (
-            <div className="m-4 hidden rounded-xl border border-dashed border-border p-8 text-center md:block">
+            <div className="m-4 hidden rounded-xl border border-dashed border-border p-8 text-center xl:block">
               <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-secondary">
                 <CalendarDays className="size-6 text-ink-soft" />
               </span>
@@ -1715,22 +1715,26 @@ function SheetOnSmall({ children, onClose }: { children: ReactNode; onClose: () 
 function EmployeeLensBar({ employee, lens, count }: { employee: EmployeeLens; lens: (typeof LENSES)[EmployeeLens]; count: number }) {
   const m = getMember(employee);
   return (
-    <section className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-3 shadow-card sm:p-4">
-      <span className="size-11 shrink-0 overflow-hidden rounded-2xl">
-        {m ? <Portrait memberId={employee} name={m.name} className="size-full" /> : null}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-black">{lens.title}</p>
-        <p className="text-xs text-muted-foreground">
-          {count ? `${count} عنصر هذا الشهر من ${m?.name ?? "الموظف"}` : lens.empty}
-        </p>
+    <section className="mb-4 rounded-2xl border border-border bg-card p-3 shadow-card sm:p-4">
+      <div className="flex items-center gap-3">
+        <span className="size-11 shrink-0 overflow-hidden rounded-2xl">
+          {m ? <Portrait memberId={employee} name={m.name} className="size-full" /> : null}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-black">{lens.title}</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            {count ? `${count} عنصر هذا الشهر من ${m?.name ?? "الموظف"}` : lens.empty}
+          </p>
+        </div>
       </div>
-      <Link to="/app/chat/$id" params={{ id: employee }} className="rounded-xl border border-border px-3 py-2 text-xs font-bold hover:bg-secondary">
-        اطلب من {m?.name ?? "الموظف"}
-      </Link>
-      <Link to="/app/calendar" className="rounded-xl px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-secondary">
-        تقويم الفريق كله
-      </Link>
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+        <Link to="/app/chat/$id" params={{ id: employee }} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-border px-3 py-2 text-center text-xs font-bold hover:bg-secondary">
+          اطلب من {m?.name ?? "الموظف"}
+        </Link>
+        <Link to="/app/calendar" className="inline-flex min-h-10 items-center justify-center rounded-xl px-3 py-2 text-center text-xs font-bold text-muted-foreground hover:bg-secondary">
+          تقويم الفريق كله
+        </Link>
+      </div>
     </section>
   );
 }
