@@ -14676,6 +14676,16 @@ section:has(> .integration-grid-wave) {
   flex: 1 1 auto;
   overflow: hidden;
 }
+/* Tools share the header, but must not inherit the transcript scroll lock. */
+.is-chat-shell main:not(:has(.chat-command-layout)) {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  padding-top: 5rem;
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+  scroll-padding-top: 5rem;
+}
 .is-chat-shell .chat-command-layout,
 .is-chat-shell .chat-stage {
   width: 100%;
@@ -47949,4 +47959,42 @@ body:has(.chat-composer-dock) .liquid-glass-sahl.sahl-cookie-consent {
 @media (max-width: 860px) {
   .sahl-hire-grid { grid-template-columns: 1fr; }
   .sahl-hire-card.is-ziad { order: -1; }
+}
+
+/* Reserve normal-flow space for every welcome element on short screens. */
+.is-chat-shell .chat-welcome {
+  flex: 0 0 auto;
+  min-height: auto;
+  padding-block: 1.5rem 2rem;
+}
+.is-chat-shell .chat-welcome > * {
+  flex-shrink: 0;
+  max-width: 100%;
+}
+.is-chat-shell .chat-welcome-portraits {
+  height: 5.5rem;
+  margin-bottom: 1rem;
+}
+.is-chat-shell .chat-welcome-eyebrow {
+  width: 100%;
+  line-height: 1.65;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+.is-chat-shell .chat-welcome h2 {
+  width: 100%;
+  font-size: 2.45rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.is-chat-shell .chat-welcome-rotating {
+  width: 100%;
+  min-height: 5.7em;
+  font-size: 1.08rem;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 639px) {
+  .is-chat-shell .chat-welcome { padding-inline: 0.5rem; }
+  .is-chat-shell .chat-welcome h2 { font-size: 1.85rem; }
+  .is-chat-shell .chat-welcome-rotating { font-size: 0.94rem; }
 }
