@@ -54,34 +54,98 @@ function timeAgo(iso: string) {
   return `قبل ${Math.round(hrs / 24)} يوم`;
 }
 
+type SavedWelcome = { purpose?: string; industry?: string; plan?: WelcomeDraftData["plan"] };
+
+/** خطة البداية المحفوظة من /welcome: نفس المهام الثلاث، تفتح محادثة الموظف بالنص جاهزاً دون إرسال. */
+function StarterPlan({ industry, actions }: { industry?: string; actions: StarterAction[] }) {
+  const items = actions
+    .map((a) => ({ ...a, id: employeeIdFromName(a.employee) }))
+    .filter((a): a is StarterAction & { id: string } => Boolean(a.id))
+    .slice(0, 3);
+  if (!items.length) return null;
+  return (
+    <section className="app-editorial-panel mb-4" aria-labelledby="starter-plan-title">
+      <p className="app-editorial-kicker flex items-center gap-1.5">
+        <Sparkles className="size-3 text-primary" /> خطة بدايتك
+      </p>
+      <h2 id="starter-plan-title" className="mt-1.5 font-display text-xl font-black sm:text-2xl">
+        {industry ? `بدايتك في ${industry}` : "بدايتك مع فريقك"}
+      </h2>
+      <ul className="mt-4 divide-y divide-border border-y border-border">
+        {items.map((item, i) => {
+          const m = getMember(item.id);
+          return (
+            <li key={`${item.id}-${i}`} className="flex items-center gap-3 py-3">
+              <span className="block size-10 shrink-0 overflow-hidden rounded-lg">
+                <Portrait memberId={item.id} name={m?.name ?? item.employee} className="size-full" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-xs font-bold text-muted-foreground">{m?.name ?? item.employee}</span>
+                <span className="block break-words text-sm font-semibold leading-relaxed">{item.text}</span>
+              </span>
+              <Button asChild size="sm" className="shrink-0">
+                <Link to="/app/chat/$id" params={{ id: item.id }} search={{ prompt: item.text }}>ابدأ</Link>
+              </Button>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-3 text-xs text-muted-foreground">لا يُنشر أو يُرسل شيء دون موافقتك.</p>
+    </section>
+  );
+}
+
 /** شاشة أول يوم: لا أرقام صفرية ولا لوحات فارغة — طلب واحد فقط يبدأ كل شيء. */
-function FirstRun({ workspace }: { workspace: { id: string } | null }) {
+function FirstRun({ workspace }: { workspace: { id: string; industry?: string; website?: string | null; profile?: unknown } | null }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [welcomeWebsite, setWelcomeWebsite] = useState("");
+  const queryClient = useQueryClient();
+  const stored = ((workspace?.profile as { welcome?: SavedWelcome } | null)?.welcome ?? null);
+  const [local, setLocal] = useState<SavedWelcome | null>(null);
   useEffect(() => {
     let active = true;
-    void supabase.auth.getUser().then(({ data }) => {
-      if (!active || !data.user) return;
-      try {
-        if (sessionStorage.getItem("sahl-welcome-profile-user") !== data.user.id) return;
-        const draft = JSON.parse(sessionStorage.getItem("sahl-welcome-draft") ?? "null") as { website?: unknown } | null;
-        if (typeof draft?.website === "string") setWelcomeWebsite(draft.website.trim());
-      } catch { /* The introduction is optional. */ }
+    void supabase.auth.getUser().then(async ({ data }) => {
+      if (!active || !data.user || !workspace) return;
+      if (boundWelcomeUser() !== data.user.id) return;
+      const draft = readWelcomeDraft();
+      if (!draft) return;
+      if (typeof draft.website === "string") setWelcomeWebsite(draft.website.trim());
+      const industry = typeof draft.industry === "string" && draft.industry !== "أخرى" ? draft.industry.trim() : "";
+      const welcome: SavedWelcome = { purpose: draft.purpose, industry, plan: draft.plan ?? null };
+      setLocal(welcome);
+      // Persist once to the workspace so the plan survives other devices/sessions.
+      if (!stored) {
+        const profile = { ...((workspace.profile as Record<string, unknown>) ?? {}), welcome };
+        const { error } = await supabase
+          .from("workspaces")
+          .update({ profile: profile as never, ...(industry ? { industry } : {}) })
+          .eq("id", workspace.id);
+        if (!error) void queryClient.invalidateQueries({ queryKey: ["workspace"] });
+      }
     });
     return () => { active = false; };
-  }, []);
+  }, [workspace?.id]);
+  const saved = stored ?? local;
+  const planIndustry = saved?.industry || undefined;
+  const planActions = saved?.plan?.actions?.length
+    ? saved.plan.actions
+    : planIndustry
+      ? fallbackRecommendation({ industry: planIndustry, purpose: saved?.purpose === "job" || saved?.purpose === "personal" ? saved.purpose : "business" }).actions
+      : [];
   return (
     <>
+      <StarterPlan industry={planIndustry} actions={planActions} />
       <section className="app-editorial-panel app-first-run">
         <p className="app-editorial-kicker flex items-center gap-1.5">
-          <Sparkles className="size-3 text-primary" /> ابدأ من هنا
+          <Sparkles className="size-3 text-primary" /> فريقك
         </p>
         <h2 className="mt-1.5 font-display text-xl font-black sm:text-2xl">
-          اطلب أول عمل من فريقك
+          اطلب أي عمل من فريقك
         </h2>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">
           اكتب طلبك بالعربية كما تكلّم موظفاً — واختر من يبدأ. لا يُنشر شيء قبل موافقتك.
         </p>
+
 
         <div className="app-team-directory">
           {team.map((m) => {
