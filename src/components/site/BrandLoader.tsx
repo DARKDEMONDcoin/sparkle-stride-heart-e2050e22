@@ -1,5 +1,6 @@
 import { LogoMark } from "@/components/site/LogoMark";
 import { cn } from "@/lib/utils";
+import { loadingText } from "@/lib/page-label";
 
 /** علامة التحميل الرسمية: شعار زياد داخل حلقة ضوئية دوّارة. */
 export function BrandLoader({
@@ -33,7 +34,7 @@ export function BrandLoader({
 export function BrandLoaderScreen({ label }: { label?: string }) {
   return (
     <div className="brand-loader-screen">
-      <BrandLoader size="lg" label={label ?? "لحظة… نجهّز لك الصفحة"} />
+      <BrandLoader size="lg" label={label ?? loadingText()} />
     </div>
   );
 }
