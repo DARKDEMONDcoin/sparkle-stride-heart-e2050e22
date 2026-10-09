@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
   LayoutDashboard,
@@ -138,6 +138,20 @@ function FirstRun({ workspace }: { workspace: { id: string; industry?: string; w
   return (
     <>
       <StarterPlan industry={planIndustry} actions={planActions} />
+      {workspace ? (
+        <div className="mb-4">
+          <BusinessProfileCard
+            workspaceId={workspace.id}
+            website={(workspace as { website?: string | null }).website}
+            profile={(workspace as { profile?: Record<string, unknown> }).profile as never}
+            welcomeWebsite={welcomeWebsite}
+            onWelcomeSaved={() => {
+              clearWelcomeBinding();
+              setWelcomeWebsite("");
+            }}
+          />
+        </div>
+      ) : null}
       <section className="app-editorial-panel app-first-run">
         <p className="app-editorial-kicker flex items-center gap-1.5">
           <Sparkles className="size-3 text-primary" /> فريقك
@@ -154,7 +168,7 @@ function FirstRun({ workspace }: { workspace: { id: string; industry?: string; w
           {team.map((m) => {
             const open = expanded === m.id;
             return (
-              <div key={m.id} className="min-w-0 border-b border-e border-border">
+              <div key={m.id} className="h-[4.75rem] min-w-0 overflow-hidden border-b border-e border-border">
                 <Button
                   type="button"
                   variant="ghost"
@@ -172,45 +186,120 @@ function FirstRun({ workspace }: { workspace: { id: string; industry?: string; w
                   </span>
                   <ChevronDown className={`size-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
                 </Button>
-                {open && (
-                  <div id={`first-run-${m.id}`} className="border-t border-border px-4 pb-4 pt-3">
-                    <p className="text-xs leading-relaxed text-muted-foreground">{m.summary}</p>
-                    <ul className="mt-3 space-y-2">
-                      {m.tasks.map((task) => (
-                        <li key={task} className="flex items-start gap-2 text-xs leading-relaxed">
-                          <Check className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden="true" />
-                          <span>{task}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Button asChild variant="link" size="sm" className="mt-4 h-auto max-w-full justify-start whitespace-normal p-0 text-start text-xs">
-                      <Link to="/app/chat/$id" params={{ id: m.id }}>
-                        <span>ابدأ التهيئة مع {m.name}</span> <ArrowLeft className="size-3.5 shrink-0" aria-hidden="true" />
-                      </Link>
-                    </Button>
-                  </div>
-                )}
               </div>
             );
           })}
         </div>
+        {expanded ? (() => { const m = getMember(expanded); if (!m) return null; return (
+          <div id={`first-run-${m.id}`} className="border-x border-b border-border px-4 pb-4 pt-3">
+            <p className="text-sm font-bold">{m.name} · {m.role}</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{m.summary}</p>
+            <ul className="mt-3 space-y-2">
+              {m.tasks.map((task) => (
+                <li key={task} className="flex items-start gap-2 text-xs leading-relaxed">
+                  <Check className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden="true" />
+                  <span>{task}</span>
+                </li>
+              ))}
+            </ul>
+            <Button asChild variant="link" size="sm" className="mt-4 h-auto max-w-full justify-start whitespace-normal p-0 text-start text-xs">
+              <Link to="/app/chat/$id" params={{ id: m.id }}>
+                <span>ابدأ مع {m.name}</span> <ArrowLeft className="size-3.5 shrink-0" aria-hidden="true" />
+              </Link>
+            </Button>
+          </div>
+        ); })() : null}
       </section>
 
-      {workspace ? (
-        <div className="mt-4">
-          <BusinessProfileCard
-            workspaceId={workspace.id}
-            website={(workspace as { website?: string | null }).website}
-            profile={(workspace as { profile?: Record<string, unknown> }).profile as never}
-            welcomeWebsite={welcomeWebsite}
-            onWelcomeSaved={() => {
-              clearWelcomeBinding();
-              setWelcomeWebsite("");
-            }}
-          />
-        </div>
-      ) : null}
     </>
+  );
+}
+
+function bestEmployee(text: string): string {
+  const t = text;
+  if (/صور|تصميم|شعار|بوستر|بانر|لوجو/.test(t)) return "dana";
+  if (/مقال|سيو|SEO|بحث|مدونة|كلمات مفتاحية/i.test(t)) return "nour";
+  if (/مبيعات|عميل|عملاء|عرض سعر|صفقة|متابعة/.test(t)) return "sam";
+  if (/تقرير|أرقام|تحليل|بيانات|إعلان|حملة/.test(t)) return "adam";
+  if (/إيميل|بريد|موعد|اجتماع|جدول|تنظيم|مهام/.test(t)) return "eva";
+  return "sonny";
+}
+
+function RequestBox() {
+  const navigate = useNavigate();
+  const [text, setText] = useState("");
+  const [who, setWho] = useState("auto");
+  const target = who === "auto" ? bestEmployee(text) : who;
+  return (
+    <form
+      className="app-editorial-panel mb-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!text.trim()) return;
+        void navigate({ to: "/app/chat/$id", params: { id: target }, search: { prompt: text.trim() } });
+      }}
+    >
+      <label htmlFor="home-request" className="font-display text-lg font-black">ماذا تريد من فريقك اليوم؟</label>
+      <textarea
+        id="home-request"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={2}
+        maxLength={2000}
+        placeholder="اكتب طلبك بالعربية…"
+        className="mt-3 w-full resize-none rounded-2xl border border-border bg-background p-3 text-sm outline-none focus:border-primary"
+      />
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <label className="sr-only" htmlFor="home-employee">الموظف</label>
+        <select
+          id="home-employee"
+          value={who}
+          onChange={(e) => setWho(e.target.value)}
+          className="h-10 rounded-xl border border-border bg-background px-3 text-sm"
+        >
+          <option value="auto">الأنسب تلقائياً{text.trim() ? ` (${getMember(target)?.name ?? ""})` : ""}</option>
+          {team.map((m) => <option key={m.id} value={m.id}>{m.name} · {m.role}</option>)}
+        </select>
+        <Button type="submit" disabled={!text.trim()} className="ms-auto">أرسل للموظف <ArrowLeft className="size-4" /></Button>
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">لا يُنشر أو يُرسل شيء دون موافقتك.</p>
+    </form>
+  );
+}
+
+function OnboardingChecklist({ workspaceId, hasWebsite, connected, requested, reviewed }: { workspaceId: string; hasWebsite: boolean; connected: boolean; requested: boolean; reviewed: boolean }) {
+  const key = `ziad-checklist-dismissed-${workspaceId}`;
+  const [dismissed, setDismissed] = useState(true);
+  useEffect(() => { try { setDismissed(localStorage.getItem(key) === "1"); } catch { setDismissed(false); } }, [key]);
+  const items = [
+    { label: "أضف موقعك", done: hasWebsite },
+    { label: "اربط منصة", done: connected, to: "/app/integrations" as const },
+    { label: "اطلب أول عمل", done: requested },
+    { label: "راجع أول مسودة", done: reviewed, to: "/app/approvals" as const },
+  ];
+  const count = items.filter((i) => i.done).length;
+  if (dismissed) return null;
+  return (
+    <section className="app-editorial-panel mb-4" aria-label="خطوات البداية">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="font-display text-base font-black">خطوات البداية</h2>
+        <span className="text-xs font-bold text-muted-foreground" dir="ltr">{count}/4</span>
+      </div>
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary"><span className="block h-full bg-primary transition-all" style={{ width: `${(count / 4) * 100}%` }} /></div>
+      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+        {items.map((i) => (
+          <li key={i.label} className={`flex items-center gap-2 text-sm ${i.done ? "text-muted-foreground line-through" : "font-semibold"}`}>
+            {i.done ? <CheckCircle2 className="size-4 shrink-0 text-jade" /> : <span className="size-4 shrink-0 rounded-full border border-border" />}
+            {i.to && !i.done ? <Link to={i.to} className="app-text-link">{i.label}</Link> : i.label}
+          </li>
+        ))}
+      </ul>
+      {count === 4 ? (
+        <Button type="button" variant="ghost" size="sm" className="mt-3" onClick={() => { try { localStorage.setItem(key, "1"); } catch { /* optional */ } setDismissed(true); }}>
+          أخفِ القائمة
+        </Button>
+      ) : null}
+    </section>
   );
 }
 
@@ -256,6 +345,16 @@ function AppHome() {
         </div>
       ) : null}
 
+      <RequestBox />
+      {workspace ? (
+        <OnboardingChecklist
+          workspaceId={workspace.id}
+          hasWebsite={Boolean((workspace as { website?: string | null }).website)}
+          connected={connected > 0}
+          requested={started}
+          reviewed={list.some((t) => t.status === "done")}
+        />
+      ) : null}
       {isLoading ? (
         <div className="grid min-h-[40vh] place-items-center">
           <BrandLoader size="sm" />
