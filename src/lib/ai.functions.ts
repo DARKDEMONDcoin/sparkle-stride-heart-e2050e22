@@ -1662,7 +1662,7 @@ export async function runEmployeeTurn(
 
     const [imageUrl, verdict] = await Promise.all([imageTask, judgeTask]);
     const qualityScore: number | null = verdict?.score || null;
-    if (verdict) emit({ type: "step", label: verdict.revised ? `راجعت المخرج وحسّنته (التقييم ${verdict.score}/10)` : `اجتاز المراجعة (التقييم ${verdict.score}/10)` });
+    if (verdict) emit({ type: "step", label: verdict.revised ? `راجعت المخرج وحسّنته (التقييم ${verdict.score}/100)` : `اجتاز المراجعة (التقييم ${verdict.score}/100)` });
     if (verdict?.revised) {
       // مخرج واحد فقط: نجعل المهمة المحفوظة مطابقة تماماً لما يظهر في المحادثة.
       if (deliverables.length === 1 && deliverables[0]?.body) {
