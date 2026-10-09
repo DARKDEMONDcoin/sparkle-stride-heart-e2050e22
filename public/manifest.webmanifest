@@ -1,0 +1,14 @@
+{
+  "name": "زياد — فريق موظفين بالذكاء الاصطناعي",
+  "short_name": "زياد",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#9B741E",
+  "background_color": "#9B741E",
+  "icons": [
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

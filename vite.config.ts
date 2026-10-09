@@ -12,4 +12,8 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Vercel deploys: employee turns (research + writing) can exceed the default function limit.
+  // Ignored by the Lovable/Cloudflare build.
+  // The wrapper's type only lists Cloudflare keys, but it passes the object through to nitro.
+  nitro: { vercel: { functions: { maxDuration: 300 } } } as unknown as { preset?: string },
 });
