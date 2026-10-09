@@ -703,7 +703,7 @@ function CalendarPage() {
           </button>
         ) : null}
       </div>
-      <p className="-mt-2 mb-3 hidden text-[0.68rem] text-muted-foreground md:block">
+      <p className="-mt-2 mb-3 hidden text-[0.68rem] text-muted-foreground xl:block">
         اسحب أي منشور غير منشور إلى يوم آخر لإعادة جدولته بنفس الساعة، واسحب مقالات نور لتحديد موعد نشرها.
       </p>
 
@@ -747,7 +747,7 @@ function CalendarPage() {
               <ChevronLeft className="size-5" />
             </button>
           </div>
-          <div className="hidden overflow-x-auto pb-1 md:block">
+          <div className="hidden overflow-x-auto pb-1 xl:block">
             <div className="min-w-[34rem] p-2 sm:p-3">
               <div className="grid grid-cols-7 border-b border-border text-center text-[0.68rem] font-bold text-muted-foreground">
                 {DAYS_AR.map((d) => (
@@ -877,7 +877,7 @@ function CalendarPage() {
               )}
             </div>
           </div>
-          <div className="space-y-3 p-4 md:hidden">
+          <div className="space-y-3 p-4 xl:hidden">
             {monthPosts.map((post) => {
               const date = new Date(post.scheduled_at);
               return (
@@ -922,7 +922,7 @@ function CalendarPage() {
             ) : null}
           </div>
           {!isLoading && list.length === 0 && (member !== "nour" || articles.length === 0) ? (
-            <div className="m-4 hidden rounded-xl border border-dashed border-border p-8 text-center md:block">
+            <div className="m-4 hidden rounded-xl border border-dashed border-border p-8 text-center xl:block">
               <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-secondary">
                 <CalendarDays className="size-6 text-ink-soft" />
               </span>
