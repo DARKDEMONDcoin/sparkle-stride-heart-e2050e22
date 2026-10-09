@@ -723,6 +723,9 @@ function ChatView({
   const [liveText, setLiveText] = useState("");
   const sendStartedRef = useRef(0);
   const [liveSteps, setLiveSteps] = useState<string[]>([]);
+  /** توقيت وصول كل خطوة فعلياً من الخادم — لعرض المدة الحقيقية لكل مرحلة. */
+  const [liveStepTimes, setLiveStepTimes] = useState<number[]>([]);
+  const [liveMode, setLiveMode] = useState<"quick" | "work" | null>(null);
   const [browser, setBrowser] = useState<BrowserEvent | null>(null);
   const [savedTask, setSavedTask] = useState<string | null>(null);
   /** طلب ربط سياقي: يظهر فقط عندما تحتاج المهمة الحالية حساباً غير مربوط. */
@@ -926,17 +929,26 @@ function ChatView({
       // لا نعيد الطلب إن كان التنفيذ قد بدأ فعلاً — كي لا تتكرر الرسالة مرتين.
       let started = false;
       // خطوة فورية لحظة الإرسال مبنية على نص الرسالة نفسها — قبل أي رد من الخادم.
-      {
-        const gist = message.replace(/\s+/g, " ").trim();
-        setLiveSteps([`يقرأ طلبك: «${gist.length > 48 ? `${gist.slice(0, 48)}…` : gist}»`]);
-      }
+      setLiveSteps([]);
+      setLiveStepTimes([]);
+      setLiveMode(null);
+      setLiveStepTimes([]);
+      setLiveMode(null);
       try {
         const result = await streamEmployeeTurn(payload, {
           onStep: (label) => {
             started = true;
             if (cancelledRef.current) return;
             setLiveStep(label);
-            setLiveSteps((prev) => (prev[prev.length - 1] === label ? prev : [...prev, label].slice(-12)));
+            const now = Date.now();
+            setLiveSteps((prev) => {
+              if (prev[prev.length - 1] === label) return prev;
+              setLiveStepTimes((times) => [...times, now].slice(-12));
+              return [...prev, label].slice(-12);
+            });
+          },
+          onMode: (mode) => {
+            if (!cancelledRef.current) setLiveMode(mode);
           },
           onDelta: (text) => {
             started = true;
@@ -963,6 +975,8 @@ function ChatView({
         console.warn("[chat] stream failed, falling back:", streamError);
         setLiveStep(null);
       setLiveSteps([]);
+      setLiveStepTimes([]);
+      setLiveMode(null);
       setBrowser(null);
         setLiveText("");
         const result = await ask({ data: payload });
@@ -976,6 +990,8 @@ function ChatView({
       });
       setLiveStep(null);
       setLiveSteps([]);
+      setLiveStepTimes([]);
+      setLiveMode(null);
       setBrowser(null);
       setLiveText("");
       if (cancelledRef.current) {
@@ -1003,6 +1019,8 @@ function ChatView({
       setPending(null);
       setLiveStep(null);
       setLiveSteps([]);
+      setLiveStepTimes([]);
+      setLiveMode(null);
       setBrowser(null);
       setLiveText("");
       if (cancelledRef.current) {
@@ -1195,6 +1213,8 @@ function ChatView({
     setDraft("");
     setLiveStep(null);
       setLiveSteps([]);
+      setLiveStepTimes([]);
+      setLiveMode(null);
       setBrowser(null);
     setLiveText("");
     setPending(body);
@@ -1217,6 +1237,8 @@ function ChatView({
     setPendingText(null);
     setLiveStep(null);
       setLiveSteps([]);
+      setLiveStepTimes([]);
+      setLiveMode(null);
       setBrowser(null);
     setLiveText("");
     setError(null);
@@ -1808,6 +1830,9 @@ function ChatView({
                 memberId={member.id}
                 name={member.name}
                 steps={liveSteps.length ? liveSteps : liveStep ? [liveStep] : []}
+                stepTimes={liveStepTimes}
+                startedAt={sendStartedRef.current}
+                quick={liveMode !== "work"}
                 browser={browser}
                 writing={Boolean(liveText.trim())}
               />

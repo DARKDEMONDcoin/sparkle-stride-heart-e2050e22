@@ -308,6 +308,8 @@ export type TurnEvent =
   | { type: "step"; label: string }
   | { type: "delta"; text: string }
   | { type: "reset" }
+  /** quick = رد مباشر بلا مراحل (دردشة/سؤال بسيط)؛ work = تنفيذ بخطوات حقيقية مرئية. */
+  | { type: "mode"; mode: "quick" | "work" }
   | { type: "browser"; liveUrl?: string; url?: string; title?: string; note?: string; screenshotUrl?: string | null; done?: boolean };
 
 export type TurnEmit = (event: TurnEvent) => void;
@@ -459,8 +461,8 @@ export async function runEmployeeTurn(
     emit({
       type: "step",
       label: (history ?? []).length
-        ? `رجعت لآخر ما اتفقنا عليه وقرأت طلبك عن «${turnTopic}»`
-        : `قرأت طلبك عن «${turnTopic}» وذاكرة علامتك`,
+        ? `قرأت طلبك و${(history ?? []).length.toLocaleString("ar")} رسالة سابقة من محادثتنا`
+        : `قرأت طلبك عن «${turnTopic}»`,
     });
 
     const { durableMemoryItems, extractExplicitMemories } = await import("./memory.server");
@@ -601,7 +603,10 @@ export async function runEmployeeTurn(
       ? webImageMod.webImageSearch(data.message, 4, lastUserTopic).catch(() => [])
       : Promise.resolve([] as Awaited<ReturnType<typeof webImageMod.webImageSearch>>);
 
-    emit({ type: "step", label: `أجمع أدلة وأرقاماً حقيقية عن «${turnTopic}»` });
+    // الوضع يُحسم من الخطة الفعلية: لا مراحل ولا لوحة عمل لدردشة أو سؤال لا يحتاج تنفيذاً.
+    const quickTurn = intent !== "work" && !wantsResearch.wanted && !turnPlan.useTools && !wantsWeb && !routed;
+    emit({ type: "mode", mode: quickTurn ? "quick" : "work" });
+    if (wantsResearch.wanted) emit({ type: "step", label: `أبحث في مصادر حقيقية عن «${wantsResearch.topic || turnTopic}»` });
     // بحث بمتصفح حقيقي مرئي للمستخدم لحظة بلحظة عند طلب بحث صريح.
     // متابعة قصيرة («ابدأ»، «يلا»، «ما تبحث») تكمل طلب البحث السابق بدل إهماله.
     const { researchIntent: detectResearch } = await import("./research-intent");
@@ -699,6 +704,15 @@ export async function runEmployeeTurn(
       browseTask,
     ]);
 
+    {
+      // ملخص ما حدث فعلاً — أرقام من نتائج البحث نفسها، لا جملة محفوظة.
+      const parts: string[] = [];
+      if (ownFieldResearch.used.length) parts.push(`${ownFieldResearch.used.length.toLocaleString("ar")} مصدر`);
+      if (browseBlock) parts.push("تصفّح مباشر");
+      if (liveBlock) parts.push("أخبار حيّة");
+      if (parts.length) emit({ type: "step", label: `جمعت الأدلة: ${parts.join(" + ")}` });
+      else if (wantsResearch.wanted) emit({ type: "step", label: "لم أجد مصادر موثوقة كافية — سأوضح ذلك بصدق" });
+    }
     /** أدلة مجال الموظف، أو قاعدة صدق صريحة إن طلب المستخدم بحثاً ولم يصل شيء. */
     const fieldResearchBlock = [browseBlock, ownFieldResearch.block].filter(Boolean).join("\n\n")
       ? [browseBlock, ownFieldResearch.block].filter(Boolean).join("\n\n")
@@ -1178,7 +1192,7 @@ export async function runEmployeeTurn(
       }
     }
 
-    emit({ type: "step", label: "أكتب المخرج الآن كلمة بكلمة" });
+    if (!quickTurn) emit({ type: "step", label: longForm ? "أكتب المخرج الكامل الآن" : "أكتب المخرج الآن" });
 
     const chatMessages = [
       { role: "system", content: system },
@@ -1648,6 +1662,7 @@ export async function runEmployeeTurn(
 
     const [imageUrl, verdict] = await Promise.all([imageTask, judgeTask]);
     const qualityScore: number | null = verdict?.score || null;
+    if (verdict) emit({ type: "step", label: verdict.revised ? `راجعت المخرج وحسّنته (التقييم ${verdict.score}/100)` : `اجتاز المراجعة (التقييم ${verdict.score}/100)` });
     if (verdict?.revised) {
       // مخرج واحد فقط: نجعل المهمة المحفوظة مطابقة تماماً لما يظهر في المحادثة.
       if (deliverables.length === 1 && deliverables[0]?.body) {
@@ -1821,7 +1836,7 @@ export async function runEmployeeTurn(
       reply = `${reply.trim()}\n\n### 📸 صور من موقعك تصلح لهذا المحتوى\n\n${gallery}\n\nاختر أي صورة منها بدل الصورة المولّدة — كلها صور حقيقية من موقعك.`;
     }
 
-    emit({ type: "step", label: "أحفظ الرد والمخرجات في مساحتك" });
+    if (!quickTurn) emit({ type: "step", label: deliverables.length ? `أحفظ ${deliverables.length.toLocaleString("ar")} مخرج في مساحتك` : "أحفظ الرد في مساحتك" });
 
     // ذاكرة القرارات تُستخلص بالتوازي مع الحفظ بدل أن تُضاف إلى زمن انتظار المستخدم.
     const decisionsTask: Promise<number> =

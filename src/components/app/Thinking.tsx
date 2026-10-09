@@ -68,20 +68,48 @@ export function LiveStatus({
   steps,
   browser,
   writing,
+  stepTimes = [],
+  startedAt,
+  quick,
 }: {
   memberId: string;
   name: string;
   steps: string[];
   browser?: BrowserEvent | null;
   writing?: boolean;
+  stepTimes?: number[];
+  startedAt?: number;
+  quick?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
-    const t0 = Date.now();
-    const iv = window.setInterval(() => setElapsed(Math.floor((Date.now() - t0) / 1000)), 1000);
+    const t0 = startedAt || Date.now();
+    const tick = () => setElapsed(Math.floor((Date.now() - t0) / 100) / 10);
+    tick();
+    const iv = window.setInterval(tick, 100);
     return () => window.clearInterval(iv);
-  }, []);
+  }, [startedAt]);
+  // رد سريع (دردشة/سؤال بسيط): لا مراحل ولا عدّاد — مؤشر كتابة فقط، كأي محادثة بشرية.
+  if (quick && !browser) {
+    return (
+      <div className="pointer-events-auto mb-2 mr-auto flex w-fit items-center gap-2 rounded-2xl border border-border/70 bg-card/95 px-2.5 py-2 shadow-card backdrop-blur animate-pop-in" role="status" aria-live="polite" aria-label={`${name} يكتب`}>
+        <span className="relative block size-7 shrink-0 overflow-hidden rounded-lg"><Portrait memberId={memberId} name={name} className="size-full" /></span>
+        <span className="flex items-center gap-1 px-1" aria-hidden>
+          <span className="size-1.5 rounded-full bg-muted-foreground think-dot" />
+          <span className="size-1.5 rounded-full bg-muted-foreground think-dot [animation-delay:150ms]" />
+          <span className="size-1.5 rounded-full bg-muted-foreground think-dot [animation-delay:300ms]" />
+        </span>
+      </div>
+    );
+  }
+  const dur = (i: number) => {
+    const a = stepTimes[i];
+    const b = stepTimes[i + 1] ?? (writing ? Date.now() : undefined);
+    if (!a || !b) return null;
+    const s = (b - a) / 1000;
+    return s < 0.1 ? null : `${s < 10 ? s.toFixed(1) : Math.round(s)}ث`;
+  };
   const current = writing ? `${name} يكتب الرد الآن…` : steps[steps.length - 1] ?? `${name} يقرأ رسالتك…`;
   const done = writing ? steps : steps.slice(0, -1);
   let host = "";
@@ -112,7 +140,7 @@ export function LiveStatus({
           {current}
         </span>
         <span className="shrink-0 tabular-nums text-[0.7rem] text-muted-foreground" dir="ltr">
-          {elapsed}s
+          {elapsed < 10 ? elapsed.toFixed(1) : Math.floor(elapsed)}s
         </span>
         {done.length || browser ? (
           <ChevronDown className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} aria-hidden />
@@ -123,7 +151,8 @@ export function LiveStatus({
           {done.map((label, i) => (
             <li key={`${i}-${label}`} className="flex min-w-0 items-start gap-2 text-[0.72rem] leading-5 text-muted-foreground">
               <Check className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden />
-              <span className="min-w-0">{label}</span>
+              <span className="min-w-0 flex-1">{label}</span>
+              {dur(i) ? <span className="shrink-0 tabular-nums text-[0.65rem] opacity-70">{dur(i)}</span> : null}
             </li>
           ))}
         </ol>

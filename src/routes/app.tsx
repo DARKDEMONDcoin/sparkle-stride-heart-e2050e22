@@ -1,8 +1,9 @@
-import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 
 import { supabase } from "@/integrations/supabase/client";
 import { GUEST_EMAIL } from "@/lib/guest.functions";
 import { BrandLoader } from "@/components/site/BrandLoader";
+import { loadingText } from "@/lib/page-label";
 import { LiveWorkspaceSync } from "@/lib/live-sync";
 import { AppShell } from "@/components/app/AppShell";
 
@@ -37,15 +38,7 @@ export const Route = createFileRoute("/app")({
   },
   head: () => ({ meta: [{ name: "robots", content: "noindex" }] }),
   pendingMs: 150,
-  pendingComponent: () => (
-    <div className="grid min-h-dvh place-items-center bg-background px-6 text-center">
-      <div className="flex flex-col items-center">
-        <BrandLoader size="lg" label={null} />
-        <p className="mt-4 font-display text-lg font-black">نجهّز مساحة عملك…</p>
-        <p className="mt-1 text-sm text-muted-foreground">ثوانٍ قليلة ويكون فريقك جاهزًا.</p>
-      </div>
-    </div>
-  ),
+  pendingComponent: () => <AppPending />,
   errorComponent: ({ error }) => (
     <div className="grid min-h-dvh place-items-center bg-background px-6 text-center">
       <div className="max-w-md">
@@ -67,3 +60,15 @@ export const Route = createFileRoute("/app")({
     </>
   ),
 });
+
+function AppPending() {
+  const target = useRouterState({ select: (s) => s.location.pathname + (s.location.searchStr ?? "") });
+  return (
+    <div className="grid min-h-dvh place-items-center bg-background px-6 text-center">
+      <div className="flex flex-col items-center">
+        <BrandLoader size="lg" label={null} />
+        <p className="mt-4 font-display text-lg font-black">{loadingText(target)}</p>
+      </div>
+    </div>
+  );
+}
